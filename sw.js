@@ -1,11 +1,14 @@
 // Rebus Club offline support.
 // The app itself is cached on install; the page is fetched fresh when online
 // (so updates arrive) and served from the cache when offline.
-const CACHE = 'rebus-club-21f0ff5076';
+const CACHE = 'rebus-club-4a8175d510';
 const FONTS = 'rebus-club-fonts';
 const APP = [
   './',
   'index.html',
+  'render.js',
+  'puzzles.js',
+  'meanings.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -45,12 +48,13 @@ self.addEventListener('fetch', event => {
 
   if (url.origin !== self.location.origin) return;
 
-  // The page: network first so updates show, cache when offline.
-  if (req.mode === 'navigate') {
+  // The page and its scripts: network first so updates arrive together, cache when offline.
+  if (req.mode === 'navigate' || url.pathname.endsWith('.js')) {
+    const key = req.mode === 'navigate' ? 'index.html' : req;
     event.respondWith(
       fetch(req)
-        .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); return res; })
-        .catch(() => caches.match('index.html'))
+        .then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(key, copy)); } return res; })
+        .catch(() => caches.match(key))
     );
     return;
   }

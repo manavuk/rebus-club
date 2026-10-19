@@ -1,0 +1,7 @@
+#!/bin/sh
+# Before each commit: check the puzzle bank, then restamp the service worker cache.
+# Turned on with: git config core.hooksPath .githooks
+set -e
+node scripts/check-puzzles.mjs
+node scripts/stamp-sw.mjs
+git add sw.js

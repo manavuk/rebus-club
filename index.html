@@ -14,6 +14,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rebus Club">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
@@ -22,8 +25,6 @@ img{max-width:100%}
 </style>
 </head>
 <body>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one centred column. The puzzle board (graph-paper slate) is the hero; answer + actions stack under it. */
 :root{
@@ -311,9 +312,11 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
 .logo span{background:var(--accent);color:var(--accent-ink);padding:0 .16em;border-radius:5px}
 .tagline{color:var(--muted);font-size:.85rem;min-width:0}
 @media (max-width:480px){.tagline{display:none}}
-.seg{display:grid;grid-template-columns:repeat(4,1fr);width:100%;padding:4px;border-radius:14px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%;padding:4px;border-radius:14px}
 .seg button{border-radius:10px;padding:9px 4px;font-size:.92rem}
 .seg button[aria-pressed="false"]:hover{color:var(--ink)}
+.seg button.new::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:.15em}
+@media (max-width:400px){.seg button{font-size:.82rem;padding:9px 2px}}
 
 .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
 .chips::-webkit-scrollbar{display:none}
@@ -354,6 +357,12 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
 .answerbar .btn{border-radius:10px}
 .feedback{font-size:.92rem}
 .hint{border:1px dashed var(--line);background:transparent}
+.meaning{border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.meaning summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:.92rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.meaning summary::-webkit-details-marker{display:none}
+.meaning summary::after{content:"+";font-family:var(--f-tile);color:var(--muted)}
+.meaning[open] summary::after{content:"\2013"}
+.meaning p{margin:0 0 12px;font-size:.93rem}
 .actions{align-items:center}
 .btn.ghost{background:transparent}
 .btn.ghost:hover:not(:disabled){background:var(--bg)}
@@ -364,7 +373,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
 .panel{border-radius:18px;padding:22px}
 .tiers div{border-top:4px solid var(--line)}
 .tiers div:nth-child(1){border-top-color:var(--t1)} .tiers div:nth-child(2){border-top-color:var(--t2)} .tiers div:nth-child(3){border-top-color:var(--t3)} .tiers div:nth-child(4){border-top-color:var(--t4)}
-#quizHud,#endlessHud,#liveHud{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+#quizHud,#endlessHud,#liveHud,#dailyHud{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .big{font-size:3.6rem}
 
 /* tips */
@@ -389,6 +398,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
     </div>
     <div class="seg" role="group" aria-label="Mode">
       <button id="mPractice" aria-pressed="true">Practice</button>
+      <button id="mDaily" aria-pressed="false">Daily</button>
       <button id="mQuiz" aria-pressed="false">Quiz</button>
       <button id="mEndless" aria-pressed="false">Endless</button>
       <button id="mLive" aria-pressed="false">Live</button>
@@ -436,7 +446,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
         <button class="btn ghost" id="lLeave" type="button" style="padding:7px 12px;font-size:.85rem">Leave</button>
       </div>
     </div>
-    <div class="hud"><span id="lRoundInfo"></span></div>
+    <div class="hud"><span id="lRoundInfo"></span><span id="lClock"></span></div>
     <div class="livestatus" id="lStatus" aria-live="polite"></div>
     <div class="actions" id="lHostCtl" hidden>
       <button class="btn go" id="lStart" type="button">Start game</button>
@@ -486,6 +496,16 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
     <div><button class="btn go" id="eStart">Start climbing</button></div>
   </section>
 
+  <!-- daily HUD -->
+  <section id="dailyHud" class="stackv" hidden>
+    <div class="hud">
+      <span class="lvl" id="dTitle"></span>
+      <span>Streak <b id="dStreak">0</b></span>
+      <span>Played <b id="dPlayed">0</b></span>
+    </div>
+    <div class="status" id="dStatus"></div>
+  </section>
+
   <!-- quiz HUD -->
   <section id="quizHud" class="stackv" hidden>
     <div class="hud">
@@ -524,8 +544,9 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
       </form>
       <div class="feedback" id="fb" aria-live="polite"></div>
       <div class="hints" id="hints"></div>
+      <details class="meaning" id="meaning" hidden><summary id="meaningSum">What it means</summary><p id="meaningText"></p></details>
       <div class="actions" id="cardActions">
-        <button class="btn ghost sm" id="hintBtn" type="button"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Hint <small id="hintCost"></small></button>
+        <button class="btn ghost sm" id="hintBtn" type="button" title="Hint (?)" aria-keyshortcuts="?"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Hint <small id="hintCost"></small></button>
         <button class="btn ghost sm" id="revealBtn" type="button">Reveal</button>
         <span class="spacer"></span>
         <button class="btn go" id="nextBtn" type="button">Next</button>
@@ -562,692 +583,27 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:fl
       <li><b>Size and colour</b> <span>A huge <code>DEAL</code> is a big deal.</span></li>
       <li><b>Direction and gaps</b> <span>Letters stepping down spell downtown. A gap means split, space or apart.</span></li>
       <li><b>What’s missing</b> <span>An alphabet with no <code>L</code> is “Noel”.</span></li>
+      <li><b>Keyboard</b> <span><code>Enter</code> checks your answer, then moves on. <code>?</code> (or <code>H</code> outside the answer box) gives a hint. <code>Esc</code> skips in Practice.</span></li>
     </ul>
   </details>
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="render.js"></script>
+<script src="puzzles.js"></script>
+<script src="meanings.js"></script>
 <script>
 /* ================= environment ================= */
 /* Inside Claude the page gets window.claude; installed as an app it doesn't, so the
    Claude-only features (Live games, Claude-written puzzles, shared ratings) step aside. */
 const STANDALONE=!(window.claude&&typeof window.claude.use==='function');
 
-/* ================= rendering ================= */
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const w=(s,c='')=>`<span class="w ${c}">${s}</span>`;
-const stk=(a,b,bar=true)=>`<div class="stk">${a}${bar?'<i class="bar"></i>':''}${b}</div>`;
-const em=(...p)=>`<div class="emo">${p.map(x=>`<span>${x}</span>`).join('<b class="plus">+</b>')}</div>`;
-const row=(cls,...p)=>`<div class="row ${cls}">${p.join('')}</div>`;
-const col=(...p)=>`<div class="col">${p.join('')}</div>`;
-const T=(...p)=>`<span class="tight">${p.join('')}</span>`;
-
-const SHAPES={triangle:'<path d="M50 5 L96 94 L4 94 Z"/>',square:'<rect x="5" y="5" width="90" height="90"/>',circle:'<circle cx="50" cy="50" r="46"/>',oval:'<ellipse cx="50" cy="50" rx="48" ry="46"/>',octagon:'<path d="M30 4 L70 4 L96 30 L96 70 L70 96 L30 96 L4 70 L4 30 Z"/>',heart:'<path d="M50 93 C18 70 3 52 7 31 C11 12 36 6 50 26 C64 6 89 12 93 31 C97 52 82 70 50 93 Z"/>'};
-/* Layout objects: a small safe vocabulary Claude-written puzzles (and some built-ins) use. */
-const SIZE={normal:'',small:'sm',big:'huge',tiny:'tiny'};
-const STYLE={blue:'blue',tophalf:'tophalf',half:'tophalf',bottomhalf:'bottomhalf',outline:'outline',hollow:'outline',shadow:'shadow',blur:'blur',blurred:'blur',glow:'glow',dotline:'dotline',dotted:'dotline',circled:'circled',red:'red',green:'green',vertical:'vertical',marked:'marked',arrow:'marked',pointed:'pointed',tilted:'tilt',upside:'upside',upsidedown:'upside',mirror:'mirror',spaced:'spaced',faded:'faded',strike:'strike',crossed:'strike',underline:'under',cracked:'crack'};
-function R(n,depth=0){
-  if(depth>4) throw new Error('too deep');
-  if(typeof n==='string'||typeof n==='number'){const s=String(n);if(!s.trim()||s.length>40)throw new Error('bad text');return w(esc(s))}
-  if(!n||typeof n!=='object') throw new Error('bad node');
-  const kid=x=>R(x,depth+1);
-  const text=()=>{const s=String(n.text??'');if(!s.trim()||s.length>40)throw new Error('bad text');return s};
-  const items=(min,max)=>{const a=n.items;if(!Array.isArray(a)||a.length<min||a.length>max)throw new Error('bad items');return a};
-  switch(String(n.type||'').toLowerCase()){
-    case 'emoji':{const a=items(1,5).map(x=>{const s=String(x);if(!s||s.length>14)throw new Error('bad emoji');return esc(s)});
-      return n.plus===false?`<div class="emo">${a.map(x=>`<span>${x}</span>`).join('')}</div>`:em(...a)}
-    case 'word':{let s=esc(text());const h=n.highlight&&String(n.highlight);
-      if(h&&text().includes(h)){const t=text(),i=t.indexOf(h);s=esc(t.slice(0,i))+`<span class="hl">${esc(h)}</span>`+esc(t.slice(i+h.length))}
-      const cls=[SIZE[n.size]||'',...[].concat(n.style||[]).map(x=>STYLE[String(x).toLowerCase()]||'')].join(' ');
-      return w(s,cls)}
-    case 'over':return stk(kid(n.top),kid(n.bottom),true);
-    case 'on':return stk(kid(n.top),kid(n.bottom),false);
-    case 'row':return row(n.gap?'gap':'',...items(1,8).map(kid));
-    case 'column':return col(...items(1,8).map(kid));
-    case 'between':return `<div class="stk"><i class="bar"></i>${kid(n.item??text())}<i class="bar"></i></div>`;
-    case 'box':{const inner=n.inside!=null?kid(n.inside):'';const box=`<div class="box">${inner}</div>`;
-      return n.outside!=null?row('gap',box,kid(n.outside)):box}
-    case 'descending': case 'ascending':{const up=n.type==='ascending';const L=[...text()];
-      return `<div class="down ${up?'up':''}">${L.map((c,i)=>`<span class="w" style="margin-left:${(i*.6).toFixed(1)}em">${esc(c)}</span>`).join('')}</div>`}
-    case 'high':return `<div class="tall">${kid(n.item??text())}<i class="floor"></i></div>`;
-    case 'low':return `<div class="tall low"><i class="ceil" style="margin-bottom:auto"></i>${kid(n.item??text())}</div>`;
-    case 'grow': case 'shrink':{const L=[...text()];const g=n.type==='grow';
-      return `<div class="grow">${L.map((c,i)=>{const f=g?(.9+i*.55):(.9+(L.length-1-i)*.55);return `<span style="font-size:${f.toFixed(2)}rem">${esc(c)}</span>`}).join('')}</div>`}
-    case 'scattered':return `<div class="row scr">${[...text()].map(c=>w(esc(c))).join('')}</div>`;
-    case 'repeat':{const c=Math.max(2,Math.min(12,parseInt(n.count)||0));return `<div class="rep">${Array.from({length:c},()=>kid(n.item??text())).join('')}</div>`}
-
-    case 'shape':{const sh=String(n.shape||'').toLowerCase();const P=SHAPES[sh];if(!P)throw new Error('bad shape');
-      return `<div class="shp ${sh}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${P}</svg><div class="shp-in">${n.item!=null?kid(n.item):''}</div></div>`}
-    case 'ring':{const it=Array.isArray(n.items)?n.items:[...text()];if(it.length<2||it.length>16)throw new Error('bad ring');
-      const dir=String(n.direction||'').toLowerCase()==='ccw'?-1:1,N=it.length;
-      const parts=it.map((x,i)=>{const a=(-90+dir*360*i/N)*Math.PI/180;return `<span class="ring-it" style="left:${(50+40*Math.cos(a)).toFixed(1)}%;top:${(50+40*Math.sin(a)).toFixed(1)}%">${kid(x)}</span>`}).join('');
-      return `<div class="ring${n.outline?' ol':''}">${parts}${n.center!=null?`<span class="ring-c">${kid(n.center)}</span>`:''}</div>`}
-    case 'clock':{const h=((parseInt(n.hour)||0)%12+12)%12,m=Math.max(0,Math.min(59,parseInt(n.minute)||0));
-      const hand=(ang,len,wd)=>{const r=ang*Math.PI/180;return `<line x1="60" y1="60" x2="${(60+len*Math.sin(r)).toFixed(1)}" y2="${(60-len*Math.cos(r)).toFixed(1)}" stroke="var(--ink)" stroke-width="${wd}" stroke-linecap="round"/>`};
-      let ticks='';for(let i=0;i<12;i++){const r=i*30*Math.PI/180;ticks+=`<line x1="${(60+46*Math.sin(r)).toFixed(1)}" y1="${(60-46*Math.cos(r)).toFixed(1)}" x2="${(60+51*Math.sin(r)).toFixed(1)}" y2="${(60-51*Math.cos(r)).toFixed(1)}" stroke="var(--muted)" stroke-width="2"/>`}
-      const num=(t,x,y)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="Archivo Black, Arial Black, sans-serif" font-size="13" fill="var(--ink)">${t}</text>`;
-      const cls=[].concat(n.style||[]).map(x=>String(x).toLowerCase()).filter(x=>x==='mirror'||x==='shadow').join(' ');
-      return `<div class="clockw ${cls}"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--surface)" stroke="var(--ink)" stroke-width="4"/>${ticks}${hand((h+m/60)*30,28,6)}${hand(m*6,42,4)}<circle cx="60" cy="60" r="4" fill="var(--ink)"/>${num(12,60,18)}${num(3,98,60)}${num(6,60,100)}${num(9,22,60)}</svg></div>`}
-    case 'calendar':{const mo=String(n.month||'').trim();if(!mo||mo.length>5)throw new Error('bad month');const dy=n.day!=null?String(n.day).slice(0,2):'';
-      return dy?`<div class="cal"><div class="cal-h">${esc(mo)}</div><div class="cal-b">${esc(dy)}</div></div>`:`<div class="cal"><div class="cal-h"></div><div class="cal-b mo">${esc(mo)}</div></div>`}
-    case 'key':{const t=String(n.text??'');if(t.length>12||(!t.trim()&&!n.wide))throw new Error('bad key');return `<kbd class="key${n.wide?' wide':''}">${esc(t)}</kbd>`}
-    case 'bubble':{const k=String(n.kind||'').toLowerCase()==='thought'?'thought':'speech';return `<div class="bub ${k}">${n.item!=null?kid(n.item):''}</div>`}
-    case 'venn':return `<div class="venn"><svg viewBox="0 0 250 150" aria-hidden="true"><circle cx="96" cy="75" r="64"/><circle cx="154" cy="75" r="64"/></svg><span class="venn-m">${n.middle!=null?kid(n.middle):''}</span></div>`;
-    default: throw new Error('unknown type '+n.type);
-  }
-}
-
-/* ================= built-in puzzle bank ================= */
-const B=[
- // ---- EASY
- {d:1,a:['sunflower'],h:'Bright sky thing + bloom.',r:em('☀️','🌸')},
- {d:1,a:['starfish'],h:'It lives on the seabed but shines in the sky.',r:em('⭐','🐟')},
- {d:1,a:['rainbow'],h:'Weather + archery.',r:em('🌧️','🏹')},
- {d:1,a:['football'],h:'Body part + something you kick.',r:em('🦶','⚽')},
- {d:1,a:['sunglasses','sunnies'],h:'Worn on bright days.',r:em('☀️','👓')},
- {d:1,a:['butterfly'],h:'Toast spread + insect.',r:em('🧈','🪰')},
- {d:1,a:['horseshoe'],h:'Said to be lucky when hung over a door.',r:em('🐴','👞')},
- {d:1,a:['keyhole'],h:'Where you might peek through a door.',r:em('🔑','🕳️')},
- {d:1,a:['seahorse','sea horse'],h:'The dad carries the babies.',r:em('🌊','🐴')},
- {d:1,a:['snowman','snow man'],h:'Built in winter, melts in spring.',r:em('❄️','👨')},
- {d:1,a:['honeymoon'],h:'A trip after a wedding.',r:em('🍯','🌙')},
- {d:1,a:['eyeball'],h:'What you see with, all of it.',r:em('👁️','⚽')},
- {d:1,a:['doghouse','dog house'],h:'Where you are when you’re in trouble.',r:em('🐶','🏠')},
- {d:1,a:['eggplant','aubergine'],h:'A purple vegetable (Americans call it this).',r:em('🥚','🌱')},
- {d:1,a:['firefly','fireflies'],h:'A glowing bug.',r:em('🔥','🪰')},
- {d:1,a:['raincoat','rain coat'],h:'Wear it on wet days.',r:em('🌧️','🧥')},
- {d:1,a:['cupcake','cup cake'],h:'A small iced treat.',r:em('☕','🎂')},
- {d:1,a:['pancake','pancakes'],h:'Flipped on Shrove Tuesday.',r:em('🍳','🎂')},
- {d:1,a:['bookworm','book worm'],h:'Someone who reads a lot.',r:em('📖','🪱')},
- {d:1,a:['earring','earrings'],h:'Jewellery for one particular body part.',r:em('👂','💍')},
- {d:1,a:['catfish'],h:'A whiskered fish (or a fake online profile).',r:em('🐱','🐟')},
- {d:1,a:['corn dog','corndog'],h:'A fairground snack on a stick.',r:em('🌽','🐶')},
- {d:1,a:['fireman','firefighter'],h:'Rescues cats from trees.',r:em('🔥','👨')},
- {d:1,a:['raindrop','raindrops'],h:'One tiny bit of a shower.',r:em('🌧️','💧')},
- {d:1,a:['toothbrush','tooth brush'],h:'Use it twice a day.',r:em('🦷','🖌️')},
- {d:1,a:['treehouse','tree house'],h:'A den up in the branches.',r:em('🌲','🏠')},
- {d:1,a:['keyboard'],h:'You type on it.',r:em('🔑','🪵')},
- {d:1,a:['dragonfly'],h:'A shimmering insect near ponds.',r:em('🐉','🪰')},
- {d:1,a:['cowboy'],h:'Wears a stetson, rides a horse.',r:em('🐄','👦')},
- {d:1,a:['seashell','sea shell'],h:'Found on the beach.',r:em('🌊','🐚')},
- {d:1,a:['honeybee','honey bee'],h:'The one that makes the sweet stuff.',r:em('🍯','🐝')},
- {d:1,a:['lighthouse','light house'],h:'Warns ships away from rocks.',r:em('💡','🏠')},
- {d:1,a:['footnote'],h:'Small print at the bottom of a page.',r:em('🦶','📝')},
- {d:1,a:['moonwalk'],h:'A famous backwards-gliding dance move.',r:em('🌙','🚶')},
- {d:1,a:['buttermilk'],h:'Used in pancakes and fried chicken.',r:em('🧈','🥛')},
- {d:1,a:['rainforest','rain forest'],h:'The Amazon is one.',r:em('🌧️','🌲')},
- {d:1,a:['fishbowl','fish bowl'],h:'Home for a goldfish.',r:em('🐟','🥣')},
- {d:1,a:['tricycle','trike'],h:'Count the cycles.',r:col(w('CYCLE'),w('CYCLE'),w('CYCLE'))},
- {d:1,a:['high chair','highchair'],h:'Where is the word sitting?',r:`<div class="tall">${w('CHAIR')}<i class="floor"></i></div>`},
- {d:1,a:['highlight','highlights'],h:'The best bit, or a yellow pen.',r:`<div class="tall">${w('LIGHT')}<i class="floor"></i></div>`},
- {d:1,a:['big deal','its a big deal','no big deal'],h:'Look at the size.',r:w('DEAL','huge')},
- {d:1,a:['big brother'],h:'An older sibling, or someone always watching.',r:w('BROTHER','huge')},
- {d:1,a:['double check','double checked'],h:'Make doubly sure.',r:row('',w('CHECK'),w('CHECK'))},
- {d:1,a:['side by side'],h:'Next to each other.',r:row('',w('SIDE'),w('SIDE'))},
- {d:1,a:['before'],h:'Read the letter and number aloud.',r:w('B4')},
- {d:1,a:['forgive'],h:'Let it go. Say the number aloud.',r:w('4GIVE')},
- // ---- MEDIUM
- {d:2,a:['mind over matter'],h:'Where is MIND compared with MATTER?',r:stk(w('MIND'),w('MATTER'))},
- {d:2,a:['head over heels'],h:'How you fall when you fall in love.',r:stk(w('HEAD'),w('HEELS'))},
- {d:2,a:['man overboard'],h:'Shouted on a ship.',r:stk(w('MAN'),w('BOARD'))},
- {d:2,a:['once upon a time'],h:'How fairy tales begin.',r:stk(w('ONCE'),w('TIME'),false)},
- {d:2,a:['long underwear','long johns'],h:'Read the bottom word first.',r:stk(w('WEAR'),w('LONG'))},
- {d:2,a:['broken heart','heartbreak','heartbroken'],h:'Something is cracked.',r:row('',w('HE'),w('ART','crack'))},
- {d:2,a:['reading between the lines','read between the lines'],h:'What’s on either side of the word?',r:`<div class="stk"><i class="bar"></i>${w('READING')}<i class="bar"></i></div>`},
- {d:2,a:['think outside the box','thinking outside the box'],h:'Be creative.',r:row('gap',`<div class="box"></div>`,w('THINK'))},
- {d:2,a:['inside job','an inside job'],h:'A crime done by someone on the staff.',r:`<div class="box">${w('JOB')}</div>`},
- {d:2,a:['fish out of water','a fish out of water'],h:'Someone who feels they don’t belong.',r:row('gap',`<div class="box">${w('WATER','sm')}</div>`,w('FISH'))},
- {d:2,a:['downtown','down town'],h:'Which way are the letters going?',r:R({type:'descending',text:'TOWN'})},
- {d:2,a:['backward glance','look back','backwards glance'],h:'Read it the other way.',r:w('ECNALG')},
- {d:2,a:['backfire','backfired'],h:'When a plan goes wrong for the planner.',r:w('ERIF')},
- {d:1,a:['banana split'],h:'A dessert with ice cream.',r:row('gap',w('BAN'),w('ANA'))},
- {d:2,a:['coffee break','break for coffee'],h:'A pause at work.',r:row('',w('COF'),w('FEE','crack'))},
- {d:2,a:['eggs over easy','over easy'],h:'A way to order eggs in an American diner.',r:stk(w('EGGS'),w('EASY'))},
- {d:1,a:['good afternoon'],h:'GOOD comes after NOON.',r:row('',w('NOON'),w('GOOD'))},
- {d:2,a:['small world','its a small world','it is a small world'],h:'Said when you bump into someone you know far from home.',r:w('world','tiny')},
- {d:2,a:['little women'],h:'A classic novel about four sisters.',r:w('women','tiny')},
- {d:3,a:['paradise','pair of dice'],h:'Say what you see out loud.',r:`<div class="emo"><span>🎲</span><span>🎲</span></div>`},
- {d:2,a:['history repeats itself','history repeats','history repeating'],h:'It happens again and again.',r:col(w('HISTORY'),w('HISTORY'),w('HISTORY'))},
- {d:2,a:['im over the moon','over the moon','i am over the moon'],h:'Extremely happy.',r:stk(w("I'M"),w('MOON'))},
- {d:2,a:['on cloud nine','on cloud 9','im on cloud nine'],h:'Blissfully happy. Where is ME sitting?',r:stk(w('ME'),w('CLOUD 9'),false)},
- {d:2,a:['upside down cake','pineapple upside down cake','upside-down cake'],h:'A dessert baked with the fruit at the bottom.',r:w('CAKE','upside')},
- {d:2,a:['growing pains'],h:'Aches of getting bigger.',r:R({type:'grow',text:'PAINS'})},
- {d:2,a:['youre under arrest','under arrest','you are under arrest'],h:'Said by police.',r:stk(w('ARREST'),w("YOU'RE"))},
- {d:1,a:['time after time'],h:'Over and over. Which TIME comes after?',r:row('',w('TIME'),w('TIME'))},
- {d:1,a:['double trouble'],h:'Twice the mischief.',r:row('',w('TROUBLE','sm'),w('TROUBLE','sm'))},
- {d:2,a:['look both ways'],h:'What to do before crossing the road.',r:row('',w('KOOL'),w('LOOK'))},
- {d:1,a:['i see you','icu'],h:'Read each letter aloud.',r:w('ICU')},
- {d:1,a:['i owe you','iou'],h:'Read each letter aloud.',r:w('IOU')},
- {d:2,a:['see you later','see ya later'],h:'A goodbye. Read it aloud.',r:w('CU L8R')},
- {d:1,a:['toe to toe'],h:'Face to face in a fight.',r:row('',w('TOE'),w('2'),w('TOE'))},
- // ---- HARD
- {d:2,a:['i understand','understand'],h:'Where is the I?',r:stk(w('STAND'),w('I'))},
- {d:3,a:['misunderstanding','misunderstood','a misunderstanding'],h:'Where is MIS?',r:stk(w('STANDING'),w('MIS'))},
- {d:3,a:['six feet underground','six feet under'],h:'Count the feet, then check where they are.',r:stk(w('GROUND'),`<div class="feet">${'<span>FEET</span>'.repeat(6)}</div>`)},
- {d:3,a:['noel','no l','no el'],h:'One letter is missing. A Christmas word.',r:`<div class="alpha">${'ABCDEFGHIJKMNOPQRSTUVWXYZ'.split('').map(c=>`<span>${c}</span>`).join('')}</div>`},
- {d:3,a:['excuse me','scuse me'],h:'Say the letters aloud: X, then two Q’s.',r:w('XQQME')},
- {d:2,a:['hole in one','a hole in one'],h:'A golfer’s dream.',r:`<span class="w">O<span class="hl">HOLE</span>NE</span>`},
- {d:3,a:['three degrees below zero','3 degrees below zero','degrees below zero'],h:'MD, BA and PhD are all kinds of…',r:stk(w('0','huge'),row('',w('MD','sm'),w('BA','sm'),w('PhD','sm')))},
- {d:2,a:['crossroads','crossroad','cross roads'],h:'Two of the same thing meeting.',r:`<div class="xgrid"><span style="grid-area:1/2">R</span><span style="grid-area:2/1">R</span><span style="grid-area:2/2">O</span><span style="grid-area:2/3">A</span><span style="grid-area:2/4">D</span><span style="grid-area:3/2">A</span><span style="grid-area:4/2">D</span></div>`},
- {d:2,a:['crossword','crossword puzzle'],h:'A newspaper puzzle. What’s been done to the word?',r:w('WORD','strike')},
- {d:2,a:['one in a million','1 in a million'],h:'Look for something odd inside the word.',r:w('MILL1ON')},
- {d:2,a:['scrambled eggs','scrambled egg'],h:'Breakfast, made messy.',r:`<div class="row scr">${w('E')}${w('G')}${w('G')}${w('S')}</div>`},
- {d:3,a:['seven seas','the seven seas','7 seas'],h:'Count them, then say the letter aloud.',r:w('CCCCCCC')},
- {d:3,a:['paradox','pair of docs'],h:'Say what you see: two of them.',r:row('gap',w('DOC'),w('DOC'))},
- {d:2,a:['just between you and me','between you and me','just between you and i'],h:'A secret is being shared.',r:row('',w('YOU'),w('JUST','sm'),w('ME'))},
- {d:2,a:['hes beside himself','beside himself','he is beside himself'],h:'He’s very upset.',r:row('',w("HE'S"),w('HIMSELF'))},
- {d:3,a:['all hands on deck','hands on deck'],h:'An order given on a ship when everyone is needed.',r:stk(row('',w('HANDS','sm'),w('HANDS','sm'),w('HANDS','sm'),w('HANDS','sm')),w('DECK'),false)},
- {d:2,a:['under the weather','im under the weather','feeling under the weather'],h:'How you feel with a cold.',r:stk(w('WEATHER'),w("I'M"))},
- {d:2,a:['tea for two'],h:'Read the letter and the numbers aloud.',r:row('',w('T'),w('4'),w('2'))},
- {d:2,a:['envy','envious'],h:'Green with it. Say the letters aloud.',r:w('NV')},
- {d:2,a:['excellent'],h:'Say the letters aloud, quickly.',r:w('XLNT')},
- {d:3,a:['go for it'],h:'Count the ITs.',r:row('',w('GO'),w('IT','sm'),w('IT','sm'),w('IT','sm'),w('IT','sm'))},
- {d:2,a:['the odds','odds','against the odds','odd numbers'],h:'None of these numbers are even.',r:row('',w('1'),w('3'),w('5'),w('7'),w('9'))},
- {d:2,a:['split personality'],h:'The word itself has been divided.',r:row('gap',w('PERSON'),w('ALITY'))},
- // ---- HARD, round 2: classics from puzzle collections, redrawn
- {d:2,a:['hurry up'],h:'Read it from the bottom.',r:R({type:'ascending',text:'HURRY'})},
- {d:3,a:['forgiveness'],h:'Count them, then say the number.',r:R({type:'column',items:['GIVENESS','GIVENESS','GIVENESS','GIVENESS'].map(t=>({type:'word',text:t,size:'small'}))})},
- {d:3,a:['space invaders'],h:'A classic arcade game. What separates the letters?',r:row('gap',w('VA'),w('DERS'))},
- {d:2,a:['split decision'],h:'A judges’ verdict that isn’t unanimous.',r:row('gap',w('DECI'),w('SION'))},
- {d:3,a:['up for grabs'],h:'Which way do they read, and how many are there?',r:R({type:'row',items:[1,2,3,4].map(()=>({type:'word',text:'GRABS',size:'small',style:'vertical'}))})},
- {d:2,a:['repeat after me'],h:'What a teacher says. Which word comes after?',r:row('',w('ME'),w('REPEAT'))},
- {d:3,a:['missing you','i miss you','miss you'],h:'Which letter is gone? Say it aloud.',r:`<div class="alpha">${'ABCDEFGHIJKLMNOPQRSTVWXYZ'.split('').map(c=>`<span>${c}</span>`).join('')}</div>`},
- {d:2,a:['falling in love','fall in love','fell in love'],h:'Watch the direction.',r:R({type:'descending',text:'LOVE'})},
- {d:3,a:['forgive and forget'],h:'Count the lines. Say the number.',r:R({type:'column',items:[1,2,3,4].map(()=>({type:'word',text:'GIVE GET',size:'small'}))})},
- {d:2,a:['just in case'],h:'Look at the coloured part and where it sits.',r:R({type:'word',text:'CAJUSTSE',highlight:'JUST'})},
- {d:3,a:['h2o','water','h to o'],h:'Where does the run of letters start and finish?',r:w('HIJKLMNO')},
- {d:2,a:['keep in touch','keeping in touch'],h:'A goodbye when friends move away.',r:R({type:'word',text:'TOKEEPUCH',highlight:'KEEP'})},
- {d:3,a:['foreign language','a foreign language'],h:'Something is IN the word. Say it aloud.',r:w('LANG4UAGE')},
- {d:2,a:['unfinished business'],h:'Something has been left undone.',r:w('BUSINE…')},
- {d:2,a:['scatterbrain','scatterbrained','scattered brain'],h:'Someone forgetful and disorganised.',r:R({type:'scattered',text:'BRAIN'})},
- {d:3,a:['neon lights','neon light'],h:'Las Vegas glows with them. Say the top word plus “on”.',r:stk(w('KNEE'),w('LIGHTS'),false)},
- {d:3,a:['circles under the eyes','circles under your eyes','circles under my eyes'],h:'What a bad night’s sleep leaves. The small letters have dots.',r:stk(w('ii ii'),w('O O','huge'),false)},
- {d:2,a:['life after death'],h:'Which word comes after the other?',r:row('',w('DEATH'),w('LIFE'))},
- {d:2,a:['touchdown','touch down'],h:'An American football score. Which way are the letters going?',r:R({type:'descending',text:'TOUCH'})},
- {d:3,a:['bend over backwards','bending over backwards'],h:'Try very hard to help. Look at the letters themselves.',r:w('BEND OVER','mirror sm')},
- {d:2,a:['cross my heart','cross my heart and hope to die'],h:'A promise. What’s been done to the words?',r:w('MY HEART','strike sm')},
- {d:3,a:['foresees','foresee','four seas','foresight'],h:'Count, then say the letter.',r:w('CCCC')},
- {d:3,a:['easy for you to say','its easy for you to say'],h:'Read every letter and number aloud.',r:w('EZ4U2SAY')},
- {d:3,a:['before you know it'],h:'Read every letter and number aloud.',r:w('B4UNOIT')},
- {d:3,a:['under one roof','all under one roof'],h:'Everyone living together.',r:stk(w('ROOF'),w('1'))},
- {d:2,a:['cut corners','cutting corners'],h:'Save effort by skipping steps.',r:R({type:'column',items:[1,2,3,4].map(()=>({type:'word',text:'CORNER',size:'small',style:'strike'}))})},
- {d:3,a:['the upper hand','upper hand','gain the upper hand'],h:'The advantage. Which one is singled out?',r:col(w('HAND','circled'),w('HAND'))},
- {d:3,a:['short end of the stick','the short end of the stick','got the short end of the stick'],h:'The worse side of a deal. Look at the last letters.',r:T(w('STI'),w('CK','sm'))},
- {d:3,a:['too many irons in the fire','many irons in the fire','irons in the fire'],h:'Taking on too much. What’s inside the coloured part?',r:`<span class="w sm">FI<span class="hl">IRONIRONIRONIRON</span>RE</span>`},
- {d:3,a:['big fish in a small pond','a big fish in a small pond'],h:'Important, but only somewhere tiny.',r:T(w('PO','sm'),w('FISH','huge'),w('ND','sm'))},
- {d:2,a:['red herring','a red herring'],h:'A false clue in a mystery. Notice the colour.',r:w('HERRING','red')},
- {d:3,a:['second nature'],h:'Something you do without thinking. Which one is marked?',r:R({type:'row',items:[{type:'word',text:'NATURE',size:'small'},{type:'word',text:'NATURE',size:'small',style:'marked'},{type:'word',text:'NATURE',size:'small'}]})},
- {d:3,a:['third wheel','the third wheel'],h:'The extra person on a date. Which one is marked?',r:R({type:'row',items:[{type:'word',text:'WHEEL',size:'small'},{type:'word',text:'WHEEL',size:'small'},{type:'word',text:'WHEEL',size:'small',style:'marked'}]})},
- {d:3,a:['the last straw','last straw'],h:'The final annoyance. Which one is marked?',r:R({type:'row',items:[1,2,3,4].map(i=>({type:'word',text:'STRAW',size:'small',style:i===4?'marked':'normal'}))})},
- {d:2,a:['bottoms up'],h:'A drinking toast. Which way does it read?',r:w('BOTTOMS','vertical')},
- {d:3,a:['no end in sight'],h:'Something that seems to go on forever.',r:`<span class="w">SI<span class="w strike hl" style="font-size:1em">END</span>GHT</span>`},
- {d:2,a:['too good to be true'],h:'Read the numbers and letters aloud.',r:w('2GOOD2BTRUE','sm')},
- {d:3,a:['wait and see'],h:'Read each letter and number aloud.',r:w('W8NC')},
- {d:2,a:['a cut above the rest','cut above the rest','a cut above'],h:'Better than all the others.',r:stk(w('CUT'),w('THE REST'),false)},
- {d:3,a:['deviate'],h:'To stray from the path. Read it aloud.',r:w('DV8')},
- {d:3,a:['escapee','escape'],h:'Someone who broke out. Read the letters aloud.',r:w('SKP')},
- {d:3,a:['tutu','tu tu'],h:'A ballerina wears one. Say what you see.',r:w('22','huge')},
- {d:3,a:['upper crust','the upper crust'],h:'The posh people. Which one is singled out?',r:col(w('CRUST','pointed'),w('CRUST'))},
- {d:2,a:['inside joke','an inside joke','in joke'],h:'Funny only to those who were there.',r:R({type:'word',text:'SIJOKEDE',highlight:'JOKE'})},
- {d:2,a:['comeback','come back','make a comeback'],h:'A return to form. Read it carefully.',r:w('EMOC')},
- {d:2,a:['miles apart'],h:'Very far from each other.',r:row('gap',w('MI'),w('LES'))},
- {d:2,a:['par for the course'],h:'What’s normal or expected. A golf term.',r:w('PAR4COURSE','sm')},
- {d:2,a:['break even'],h:'Neither profit nor loss.',r:row('',w('EV'),w('EN','crack'))},
- {d:2,a:['growing apart','grow apart'],h:'Friends drifting away from each other.',r:R({type:'grow',text:'APART'})},
- {d:2,a:['the elephant in the room','elephant in the room'],h:'The obvious problem nobody mentions.',r:R({type:'word',text:'ROELEPHANTOM',highlight:'ELEPHANT',size:'small'})},
- {d:3,a:['head and shoulders above the rest','head and shoulders above'],h:'Far better than everyone else.',r:stk(w('HEAD AND SHOULDERS','sm'),w('THE REST','sm'),false)},
- {d:2,a:['read the fine print','read the small print','the fine print','small print'],h:'Check the details of a contract.',r:row('',w('READ THE','sm'),w('print','tiny'))},
- {d:3,a:['actions speak louder than words'],h:'Doing beats saying.',r:row('',w('ACTIONS','huge'),w('words','tiny'))},
- {d:2,a:['green with envy'],h:'Very jealous. Notice the colour.',r:w('ENVY','green')},
- {d:3,a:['head for cover','run for cover'],h:'Count the repeats, then say the number.',r:row('',w('HEAD'),R({type:'column',items:[1,2,3,4].map(()=>({type:'word',text:'COVER',size:'small'}))}))},
- {d:3,a:['travel overseas','travel over seas','travelling overseas'],h:'Going abroad. How do you say the bottom line?',r:stk(w('TRAVEL'),w('CCCCCCC','sm'))},
- {d:3,a:['win with ease','winning with ease'],h:'A comfortable victory. Say the small letters as a plural.',r:row('',w('WIN'),w('EEEE','sm'))},
- {d:2,a:['working overtime','work overtime'],h:'Staying late at the office.',r:stk(w('WORKING'),w('TIME'))},
- {d:2,a:['wish upon a star','when you wish upon a star'],h:'Something you do at night with your eyes closed.',r:stk(w('WISH'),`<div class="emo"><span>⭐</span></div>`,false)},
- {d:3,a:['safety in numbers','theres safety in numbers'],h:'Why people travel in groups.',r:row('',w('1 2','sm'),w('SAFETY'),w('3 4','sm'))},
- {d:3,a:['trail mix'],h:'A hiking snack. The letters are jumbled.',r:R({type:'scattered',text:'TRAIL'})},
- // ================= HARD, round 3: new families, written for Rebus Club =================
- // --- half-cut words: only the top half shows
- {d:3,a:['half moon','halfmoon'],h:'Look at how much of the word is showing.',r:w('MOON','tophalf')},
- {d:3,a:['half baked','halfbaked'],h:'A plan that wasn’t thought through.',r:w('BAKED','tophalf')},
- {d:3,a:['half hearted','halfhearted'],h:'Without much enthusiasm.',r:w('HEARTED','tophalf')},
- {d:3,a:['half time','halftime'],h:'The break in a football match.',r:w('TIME','tophalf')},
- {d:3,a:['halfway','half way'],h:'The midpoint of a journey.',r:w('WAY','tophalf huge')},
- {d:3,a:['half truth','a half truth','half truths'],h:'Not quite a lie.',r:w('TRUTH','tophalf')},
- {d:3,a:['half a dozen','half dozen'],h:'Six of one…',r:w('DOZEN','tophalf')},
- {d:3,a:['half measures','no half measures','half measure'],h:'Doing things only partway.',r:w('MEASURES','tophalf sm')},
- // --- fractions
- {d:3,a:['quarterback','quarter back'],h:'An American football position.',r:w('¼BACK')},
- {d:3,a:['quarter final','quarterfinal','quarter finals','quarterfinals'],h:'A knockout round with eight teams left.',r:w('¼ FINAL')},
- {d:3,a:['quartermaster','quarter master'],h:'The officer in charge of supplies.',r:w('¼MASTER')},
- // --- maths symbols: name the symbol
- {d:3,a:['root beer'],h:'A fizzy drink. What is the symbol called?',r:w('√BEER')},
- {d:3,a:['root canal'],h:'An unpleasant trip to the dentist.',r:w('√CANAL')},
- {d:3,a:['root vegetables','root vegetable'],h:'Carrots, parsnips and turnips.',r:w('√VEGETABLES','sm')},
- {d:3,a:['grassroots','grass roots'],h:'Ordinary people at the base of a movement.',r:w('GRASS √S')},
- {d:3,a:['take root','taking root','takes root'],h:'When an idea starts to grow.',r:w('TAKE √')},
- {d:3,a:['change of heart'],h:'A scientist would call the triangle something else.',r:w('Δ OF HEART')},
- {d:3,a:['change of scenery','change of scene'],h:'What a holiday gives you.',r:w('Δ OF SCENERY','sm')},
- {d:3,a:['climate change'],h:'A global issue. What does the triangle mean in science?',r:w('CLIMATE Δ')},
- {d:3,a:['summer'],h:'A season. What does the big sigma tell you to do?',r:w('∑MER')},
- {d:3,a:['somewhere over the rainbow','over the rainbow'],h:'A song from The Wizard of Oz.',r:col(w('∑WHERE'),w('OVER THE RAINBOW','sm'))},
- {d:3,a:['some like it hot'],h:'A Marilyn Monroe film.',r:w('∑ LIKE IT HOT','sm')},
- {d:3,a:['divide and conquer','divide and rule'],h:'A strategy of splitting your enemies.',r:w('÷ & CONQUER')},
- {d:3,a:['digital divide'],h:'The gap between people with and without the internet.',r:w('DIGITAL ÷')},
- {d:3,a:['equal opportunity','equal opportunities'],h:'Fair chances for everyone.',r:w('= OPPORTUNITY','sm')},
- {d:3,a:['separate but equal'],h:'A notorious legal doctrine.',r:w('SEPARATE BUT =','sm')},
- {d:3,a:['the greater good','greater good','for the greater good'],h:'What sacrifices are made for.',r:w('THE > GOOD')},
- {d:3,a:['the lesser of two evils','lesser of two evils','the lesser of 2 evils'],h:'The less bad option.',r:w('THE < OF 2 EVILS','sm')},
- {d:3,a:['the third degree','third degree'],h:'An intense grilling.',r:w('3RD °')},
- {d:3,a:['double agent'],h:'A spy working for both sides.',r:w('AGENT ×2')},
- {d:3,a:['double take'],h:'A surprised second look.',r:w('TAKE ×2')},
- {d:3,a:['triple threat'],h:'Someone who can sing, dance and act.',r:w('THREAT ×3')},
- {d:3,a:['double cross','doublecross'],h:'To betray.',r:w('CROSS ×2')},
- {d:3,a:['to infinity and beyond'],h:'A toy space ranger’s catchphrase.',r:w('2 ∞ & BEYOND','sm')},
- {d:3,a:['pie in the sky'],h:'An unrealistic dream. Say the symbol aloud, and notice where it is.',r:R({type:'word',text:'SKπY',highlight:'π'})},
- {d:3,a:['american pie'],h:'A Don McLean song.',r:w('AMERICAN π','sm')},
- {d:3,a:['easy as pie','as easy as pie'],h:'Very simple.',r:w('EASY AS π')},
- // --- card, music and chess symbols: name the symbol
- {d:3,a:['call a spade a spade'],h:'Speak bluntly. Name the card suit.',r:w('CALL A ♠ A ♠','sm')},
- {d:3,a:['club sandwich'],h:'A stacked lunch.',r:w('♣ SANDWICH','sm')},
- {d:3,a:['diamond in the rough','a diamond in the rough','rough diamond'],h:'Hidden potential.',r:w('♦ IN THE ROUGH','sm')},
- {d:3,a:['note to self'],h:'A reminder you write for yourself.',r:w('♪ TO SELF')},
- {d:3,a:['noteworthy','note worthy'],h:'Worth paying attention to.',r:w('♪WORTHY')},
- {d:3,a:['look sharp'],h:'Hurry and be alert. Name the music symbol.',r:w('LOOK ♯')},
- {d:3,a:['sharpshooter','sharp shooter'],h:'An expert marksman.',r:w('♯SHOOTER')},
- {d:3,a:['flat broke'],h:'Penniless. Name the music symbol.',r:w('♭ BROKE')},
- {d:3,a:['flat out'],h:'As fast as possible.',r:w('♭ OUT')},
- {d:3,a:['drama queen'],h:'Someone who overreacts. Name the chess piece.',r:w('DRAMA ♛')},
- {d:3,a:['king size','king sized'],h:'An extra-large bed.',r:w('♚ SIZE')},
- {d:3,a:['good night','goodnight'],h:'Said at bedtime. Name the chess piece, then say it aloud.',r:w('GOOD ♞')},
- {d:3,a:['nightmare'],h:'A bad dream.',r:w('♞MARE')},
- {d:3,a:['night owl'],h:'Someone who stays up late.',r:w('♞ OWL')},
- {d:3,a:['pawn shop','pawnshop','pawnbroker'],h:'Where you can sell a watch for quick cash.',r:w('♟ SHOP')},
- {d:3,a:['rookie mistake','rookie error'],h:'An error a beginner makes. Name the chess piece.',r:w('♜IE MISTAKE','sm')},
- // --- chemistry
- {d:3,a:['iron man','ironman'],h:'A superhero. Think chemistry.',r:w('Fe MAN')},
- {d:3,a:['pumping iron'],h:'Lifting weights.',r:w('PUMPING Fe')},
- {d:3,a:['gold rush'],h:'California, 1849. Think chemistry.',r:w('Au RUSH')},
- {d:3,a:['gold digger'],h:'Someone who dates for money.',r:w('Au DIGGER')},
- {d:3,a:['silver lining','every cloud has a silver lining'],h:'Every cloud has one.',r:w('Ag LINING')},
- {d:3,a:['silver spoon','born with a silver spoon','born with a silver spoon in your mouth'],h:'Born into wealth.',r:w('Ag SPOON')},
- {d:3,a:['led zeppelin'],h:'A rock band. The element’s name is spelled like their first word sounds.',r:w('Pb ZEPPELIN','sm')},
- {d:3,a:['tin man','the tin man'],h:'He wanted a heart.',r:w('Sn MAN')},
- {d:3,a:['salt of the earth'],h:'A thoroughly decent person.',r:w('NaCl OF THE EARTH','sm')},
- {d:3,a:['water under the bridge'],h:'Something in the past, now forgiven.',r:col(w('H₂O'),w('UNDER THE BRIDGE','sm'))},
- // --- Roman numerals
- {d:3,a:['sixth sense','the sixth sense'],h:'Intuition. Read the numeral.',r:w('VIth SENSE')},
- {d:3,a:['10 downing street','ten downing street','number 10','number ten','downing street'],h:'A famous London address.',r:w('X DOWNING ST','sm')},
- {d:3,a:['five star','5 star'],h:'A top-rated hotel.',r:w('V STAR')},
- {d:3,a:['seven wonders','seven wonders of the world','7 wonders of the world','7 wonders'],h:'Ancient marvels.',r:w('VII WONDERS','sm')},
- {d:3,a:['four leaf clover','4 leaf clover','four leaved clover'],h:'A lucky find in a field.',r:w('IV LEAF CLOVER','sm')},
- {d:3,a:['friday the 13th','friday the thirteenth','friday 13th'],h:'An unlucky day.',r:w('FRIDAY XIII')},
- {d:3,a:['fifty shades of grey','50 shades of grey','fifty shades of gray','fifty shades'],h:'A bestselling novel.',r:w('L SHADES OF GREY','sm')},
- {d:3,a:['hundred percent','100 percent','one hundred percent','a hundred percent','100 per cent','hundred per cent'],h:'Completely. Read the numeral.',r:w('C PERCENT')},
- {d:3,a:['catch 22','catch twenty two'],h:'A no-win situation, and a novel.',r:w('CATCH XXII')},
- {d:3,a:['oceans eleven','oceans 11'],h:'A heist film.',r:w("OCEAN'S XI")},
- {d:3,a:['threes a crowd','three is a crowd','two is company three is a crowd','twos company threes a crowd'],h:'Two’s company…',r:w("III'S A CROWD",'sm')},
- // --- rings: things arranged in a circle
- {d:3,a:['rock around the clock','rock round the clock'],h:'A 1950s hit. Where is ROCK?',r:R({type:'ring',items:['12','1','2','3','4','5','6','7','8','9','10','11'].map(t=>({type:'word',text:t,size:'small'})),center:'ROCK'})},
- {d:3,a:['vicious circle','vicious cycle'],h:'A problem that feeds itself.',r:R({type:'ring',text:'VICIOUS',outline:true})},
- {d:3,a:['circle of friends'],h:'The people closest to you.',r:R({type:'ring',items:[1,2,3,4,5,6].map(()=>({type:'word',text:'FRIEND',size:'small'}))})},
- {d:3,a:['trip around the world','trip round the world','a trip around the world'],h:'The journey of a lifetime.',r:R({type:'ring',text:'TRIP',center:{type:'word',text:'THE WORLD',size:'small'}})},
- {d:3,a:['going round in circles','going around in circles','going in circles','go round in circles','running round in circles'],h:'Making no progress.',r:R({type:'ring',text:'GOING',outline:true})},
- {d:3,a:['inner circle'],h:'The trusted few closest to the boss.',r:R({type:'ring',items:Array(10).fill('•'),center:'INNER'})},
- {d:3,a:['counterclockwise','counter clockwise','anticlockwise','anti clockwise'],h:'Which way do the letters run?',r:R({type:'ring',text:'COUNTER',direction:'ccw'})},
- {d:3,a:['full circle','come full circle','gone full circle'],h:'Back where you started.',r:R({type:'ring',text:'FULL',outline:true})},
- {d:3,a:['news','the news'],h:'Points of the compass, picked up in a different order.',r:R({type:'ring',items:['N','E','S','W'],center:'✦'})},
- // --- shapes
- {d:3,a:['love triangle'],h:'Three people, one romance.',r:R({type:'shape',shape:'triangle',item:'LOVE'})},
- {d:3,a:['bermuda triangle','the bermuda triangle'],h:'Where ships are said to vanish.',r:R({type:'shape',shape:'triangle',item:{type:'word',text:'BERMUDA',size:'small'}})},
- {d:3,a:['times square'],h:'A famous New York junction.',r:R({type:'shape',shape:'square',item:'TIMES'})},
- {d:3,a:['back to square one'],h:'Starting over from the very beginning.',r:row('',w('BACK TO','sm'),R({type:'shape',shape:'square',item:'1'}))},
- {d:3,a:['square meal','a square meal','three square meals'],h:'A proper, filling dinner.',r:R({type:'shape',shape:'square',item:'MEAL'})},
- {d:3,a:['square peg in a round hole','a square peg in a round hole'],h:'Someone who doesn’t fit in.',r:R({type:'shape',shape:'circle',item:{type:'shape',shape:'square',item:'PEG'}})},
- {d:3,a:['oval office','the oval office'],h:'A famous room in Washington.',r:R({type:'shape',shape:'oval',item:'OFFICE'})},
- {d:3,a:['stop the presses','stop the press'],h:'Shouted when big news breaks.',r:R({type:'shape',shape:'octagon',item:{type:'word',text:'THE PRESSES',size:'small'}})},
- {d:3,a:['stop at nothing','will stop at nothing'],h:'Ruthlessly determined. What is the number called?',r:R({type:'shape',shape:'octagon',item:{type:'word',text:'0',size:'big'}})},
- {d:3,a:['heart of gold','a heart of gold'],h:'Kind and generous.',r:R({type:'shape',shape:'heart',item:'GOLD'})},
- {d:3,a:['heart of stone','a heart of stone'],h:'Cold and unfeeling.',r:R({type:'shape',shape:'heart',item:'STONE'})},
- {d:3,a:['fair and square'],h:'Honestly, by the rules.',r:row('',w('FAIR'),w('&','sm'),R({type:'shape',shape:'square'}).replace('<div class="shp square">','<div class="shp square" style="width:90px;height:90px">'))},
- {d:3,a:['hugs and kisses','kisses and hugs','xoxo'],h:'How you might sign off a letter.',r:`<div class="xo"><span>X</span><span>O</span><span>X</span><span>O</span></div>`},
- // --- clocks
- {d:3,a:['the eleventh hour','eleventh hour','at the eleventh hour'],h:'At the last possible moment.',r:R({type:'clock',hour:11,minute:0})},
- {d:3,a:['burn the midnight oil','burning the midnight oil'],h:'Work late into the night.',r:row('',R({type:'clock',hour:12,minute:0}),`<div class="emo"><span>🔥</span><span>🛢️</span></div>`)},
- {d:3,a:['five oclock shadow','5 oclock shadow'],h:'Stubble by the end of the day.',r:R({type:'clock',hour:5,minute:0,style:['shadow']})},
- {d:3,a:['turn back the clock','turn back time','turn the clock back','put the clock back','turning back the clock'],h:'Return to how things used to be. Look closely at the numbers.',r:R({type:'clock',hour:10,minute:10,style:['mirror']})},
- // --- calendar pages
- {d:3,a:['leap year','leap day'],h:'It comes round once every four years.',r:R({type:'calendar',month:'FEB',day:29})},
- {d:3,a:['april fools day','april fools','april fool'],h:'A day for pranks.',r:R({type:'calendar',month:'APR',day:1})},
- {d:3,a:['new years eve'],h:'Countdown night.',r:R({type:'calendar',month:'DEC',day:31})},
- {d:3,a:['the ides of march','ides of march','beware the ides of march'],h:'Caesar was told to beware it.',r:R({type:'calendar',month:'MAR',day:15})},
- {d:3,a:['bonfire night','guy fawkes night','guy fawkes day','fireworks night'],h:'Remember, remember…',r:R({type:'calendar',month:'NOV',day:5})},
- {d:3,a:['boxing day'],h:'The day after the big one.',r:R({type:'calendar',month:'DEC',day:26})},
- {d:3,a:['may day','mayday'],h:'A spring holiday, or a distress call.',r:R({type:'calendar',month:'MAY',day:1})},
- {d:3,a:['maybe'],h:'Possibly. Read the month and the word together.',r:row('',R({type:'calendar',month:'MAY'}),w('BE'))},
- {d:3,a:['marching orders','given your marching orders'],h:'Being told to leave.',r:row('',R({type:'calendar',month:'MAR'}),w('CHING ORDERS','sm'))},
- {d:3,a:['octopus'],h:'It has eight arms.',r:row('',R({type:'calendar',month:'OCT'}),w('OPUS'))},
- {d:3,a:['janitor'],h:'Someone who looks after a building.',r:row('',R({type:'calendar',month:'JAN'}),w('ITOR'))},
- {d:3,a:['augment'],h:'To make bigger.',r:row('',R({type:'calendar',month:'AUG'}),w('MENT'))},
- // --- punctuation and typed symbols: name the mark
- {d:3,a:['out of the question'],h:'Not possible at all.',r:w('OUT OF THE ?')},
- {d:3,a:['pop the question'],h:'Propose marriage.',r:w('POP THE ?')},
- {d:3,a:['burning question','the burning question'],h:'The thing everyone wants to know.',r:w('BURNING ?')},
- {d:3,a:['to the point'],h:'Brief and direct. What is the dot called?',r:T(w('TO THE '),w('.','huge'))},
- {d:3,a:['boiling point'],h:'100 degrees Celsius for water.',r:T(w('BOILING '),w('.','huge'))},
- {d:3,a:['point of no return','the point of no return'],h:'Once you pass it, you can’t go back.',r:T(w('.','huge'),w(' OF NO RETURN','sm'))},
- {d:3,a:['on the dot'],h:'Exactly on time.',r:T(w('ON THE '),w('.','huge'))},
- {d:3,a:['hash browns','hash brown'],h:'A breakfast side. Name the symbol.',r:w('# BROWNS')},
- {d:3,a:['starstruck','star struck'],h:'Dazzled by a celebrity.',r:w('* STRUCK')},
- {d:3,a:['slash and burn'],h:'A destructive farming method.',r:w('/ AND BURN')},
- {d:3,a:['tax bracket'],h:'Your band on the income scale.',r:w('TAX ( )')},
- {d:3,a:['carrot cake'],h:'A spiced dessert. What do you call the symbol?',r:w('^ CAKE')},
- {d:3,a:['carrot and stick','the carrot and the stick','carrot or stick'],h:'Rewards and punishments.',r:w('^ AND STICK')},
- {d:3,a:['at all costs'],h:'Whatever it takes.',r:w('@ ALL COSTS')},
- {d:3,a:['where its at','thats where its at'],h:'The place to be.',r:w("WHERE IT'S @")},
- {d:3,a:['mad dash','a mad dash'],h:'A frantic rush. Name the mark.',r:w('MAD —')},
- {d:3,a:['the big bang','big bang','big bang theory'],h:'How the universe began. What do typesetters call the mark?',r:w('THE BIG !')},
- {d:3,a:['bang for your buck','bang for the buck','more bang for your buck'],h:'Value for money.',r:w('! FOR YOUR $')},
- {d:3,a:['pipe dream'],h:'A fantasy that will never happen. What do coders call the symbol?',r:w('| DREAM')},
- {d:3,a:['brace yourself','brace yourselves'],h:'Prepare for a shock. What are the curly marks called?',r:w('{ YOURSELF }','sm')},
- // --- keyboard keys
- {d:3,a:['escape route'],h:'A way out.',r:`<div class="keyrow">${R({type:'key',text:'ESC'})}${w('ROUTE')}</div>`},
- {d:3,a:['the great escape','great escape'],h:'A classic war film.',r:`<div class="keyrow">${w('THE GREAT','sm')}${R({type:'key',text:'ESC'})}</div>`},
- {d:3,a:['control freak'],h:'Someone who must run everything.',r:`<div class="keyrow">${R({type:'key',text:'CTRL'})}${w('FREAK')}</div>`},
- {d:3,a:['self control','selfcontrol'],h:'Resisting temptation.',r:`<div class="keyrow">${w('SELF')}${R({type:'key',text:'CTRL'})}</div>`},
- {d:3,a:['delicious'],h:'Very tasty.',r:`<div class="keyrow">${R({type:'key',text:'DEL'})}${w('ICIOUS')}</div>`},
- {d:3,a:['shift work','shiftwork'],h:'Working nights one week, days the next.',r:`<div class="keyrow">${R({type:'key',text:'SHIFT'})}${w('WORK')}</div>`},
- {d:3,a:['space cadet'],h:'A dreamy, absent-minded person. Which key is blank?',r:`<div class="keyrow">${R({type:'key',wide:true})}${w('CADET')}</div>`},
- {d:3,a:['space race','the space race'],h:'A Cold War competition.',r:`<div class="keyrow">${R({type:'key',wide:true})}${w('RACE')}</div>`},
- {d:3,a:['outer space'],h:'Beyond the atmosphere.',r:`<div class="keyrow">${w('OUTER')}${R({type:'key',wide:true})}</div>`},
- {d:3,a:['refreshing'],h:'Cool and invigorating. What does the key do in a browser?',r:`<div class="keyrow">${R({type:'key',text:'F5'})}${w('ING')}</div>`},
- {d:3,a:['undo the damage','undo damage'],h:'Put right what went wrong. What does the key combination do?',r:`<div class="keyrow">${R({type:'key',text:'CTRL'})}${w('+','sm')}${R({type:'key',text:'Z'})}${w('THE DAMAGE','sm')}</div>`},
- // --- arrows
- {d:3,a:['upbeat','up beat'],h:'Cheerful and positive.',r:w('↑BEAT')},
- {d:3,a:['down to earth','down-to-earth'],h:'Practical and unpretentious.',r:w('↓ TO EARTH')},
- {d:3,a:['up in the air'],h:'Undecided.',r:w('↑ IN THE AIR','sm')},
- {d:3,a:['leftovers','left overs'],h:'Tomorrow’s lunch, from tonight’s dinner.',r:w('← OVERS')},
- {d:3,a:['rite of passage','a rite of passage'],h:'A ceremony marking a stage of life. The arrow sounds like it.',r:w('→ OF PASSAGE','sm')},
- {d:3,a:['up to scratch'],h:'Good enough.',r:w('↑ TO SCRATCH','sm')},
- {d:3,a:['things are looking up'],h:'The situation is improving.',r:col(w('THINGS ARE','sm'),w('LOOKING ↑'))},
- {d:3,a:['down and out'],h:'Destitute.',r:w('↓ & OUT')},
- {d:3,a:['up and coming','upandcoming'],h:'Rising and promising.',r:w('↑ & COMING')},
- {d:3,a:['right as rain'],h:'Perfectly well again.',r:w('→ AS RAIN')},
- {d:3,a:['out of left field','left field'],h:'Completely unexpected.',r:w('OUT OF ← FIELD','sm')},
- // --- units
- {d:3,a:['bigfoot','big foot'],h:'A legendary hairy creature. Read the unit.',r:w('BIG ft')},
- {d:3,a:['backyard','back yard'],h:'Behind the house. Read the unit.',r:w('BACK yd')},
- {d:3,a:['scotland yard'],h:'Home of the Metropolitan Police.',r:w('SCOTLAND yd','sm')},
- {d:3,a:['give an inch take a mile','give them an inch and theyll take a mile','give an inch and theyll take a mile','give him an inch and hell take a mile','give someone an inch and theyll take a mile'],h:'Offer a little and they’ll grab far more. Read the units.',r:col(w('GIVE AN in','sm'),w('TAKE A mi','sm'))},
- {d:3,a:['parking meter'],h:'You feed it coins. Read the unit.',r:w('PARKING m')},
- {d:3,a:['pound of flesh','a pound of flesh'],h:'Shylock’s demand. Read the unit.',r:w('lb OF FLESH')},
- {d:3,a:['the whole nine yards','whole nine yards','the whole 9 yards'],h:'Everything, all of it.',r:w('THE WHOLE 9 yds','sm')},
- {d:3,a:['split second','a split second'],h:'An instant. The letter is a unit of time.',r:w('SPLIT s')},
- {d:3,a:['hourglass','hour glass'],h:'Sand runs through it.',r:w('hr GLASS')},
- // --- currency
- {d:3,a:['pound cake'],h:'A dense, buttery bake. Name the symbol.',r:w('£ CAKE')},
- {d:3,a:['in for a penny in for a pound'],h:'If you’ve started, see it through.',r:col(w('IN FOR A PENNY','sm'),w('IN FOR A £','sm'))},
- {d:3,a:['pass the buck'],h:'Shift the blame. What’s slang for the money?',r:w('PASS THE $')},
- {d:3,a:['throw off the scent','thrown off the scent','throw them off the scent'],h:'Mislead the hunters. Say the coin aloud.',r:w('THROW OFF THE ¢','sm')},
- {d:3,a:['centre stage','center stage'],h:'The spotlight’s favourite spot.',r:w('¢ER STAGE')},
- {d:3,a:['make sense','makes sense','it makes sense'],h:'Be understandable. Say the coins aloud.',r:w('MAKE ¢¢')},
- {d:3,a:['eurovision','eurovision song contest'],h:'An annual song contest.',r:w('€VISION')},
- {d:3,a:['pound the pavement','pounding the pavement','pound the pavements'],h:'Walk the streets looking for work.',r:w('£ THE PAVEMENT','sm')},
- // --- emoji + letters that sound out a word
- {d:3,a:['be yourself','just be yourself'],h:'Say the picture as a sound, not a creature.',r:`<div class="hy"><span class="e">🐝</span>${w('YOURSELF','sm')}</div>`},
- {d:3,a:['be my guest'],h:'Go ahead, help yourself.',r:`<div class="hy"><span class="e">🐝</span>${w('MY GUEST','sm')}</div>`},
- {d:3,a:['belief'],h:'Faith. Say the picture, then the letters.',r:`<div class="hy"><span class="e">🐝</span>${w('LIEF')}</div>`},
- {d:3,a:['sheepish'],h:'Embarrassed.',r:`<div class="hy"><span class="e">🐑</span>${w('ISH')}</div>`},
- {d:3,a:['coward'],h:'Not brave at all.',r:`<div class="hy"><span class="e">🐄</span>${w('ARD')}</div>`},
- {d:3,a:['pair of shoes','a pair of shoes'],h:'Two for your feet. The fruit sounds like it.',r:`<div class="hy"><span class="e">🍐</span>${w('OF SHOES','sm')}</div>`},
- {d:3,a:['dear john','dear john letter'],h:'A break-up letter.',r:`<div class="hy"><span class="e">🦌</span>${w('JOHN')}</div>`},
- {d:3,a:['antique'],h:'Old and valuable.',r:`<div class="hy"><span class="e">🐜</span>${w('IQUE')}</div>`},
- {d:3,a:['antarctica'],h:'The coldest continent.',r:`<div class="hy"><span class="e">🐜</span>${w('ARCTICA','sm')}</div>`},
- {d:3,a:['ice cream','i scream'],h:'Say it aloud. Everyone screams for it.',r:`<div class="hy"><span class="e">👁️</span>${w('SCREAM')}</div>`},
- {d:3,a:['goatee'],h:'A small chin beard.',r:`<div class="hy"><span class="e">🐐</span>${w('EE')}</div>`},
- {d:3,a:['barefoot','bare foot','barefooted'],h:'Without shoes. The animal sounds like it.',r:`<div class="hy"><span class="e">🐻</span>${w('FOOT')}</div>`},
- {d:3,a:['pirate'],h:'Arr! Say the food, then the letters.',r:`<div class="hy"><span class="e">🥧</span>${w('RATE')}</div>`},
- {d:3,a:['corner'],h:'Where two walls meet.',r:`<div class="hy"><span class="e">🌽</span>${w('ER')}</div>`},
- {d:3,a:['catalogue','catalog'],h:'A book of things to buy.',r:`<div class="hy"><span class="e">🐱</span>${w('ALOGUE','sm')}</div>`},
- {d:3,a:['catastrophe'],h:'A disaster.',r:`<div class="hy"><span class="e">🐱</span>${w('ASTROPHE','sm')}</div>`},
- {d:3,a:['candidate'],h:'Someone standing for election.',r:`<div class="hy"><span class="e">🍬</span>${w('DATE')}</div>`},
- {d:3,a:['tennis'],h:'A racket sport.',r:`<div class="hy"><span class="e">🔟</span>${w('NIS')}</div>`},
- {d:3,a:['legend'],h:'A myth, or a hero.',r:`<div class="hy"><span class="e">🦵</span>${w('END')}</div>`},
- {d:3,a:['iceland'],h:'A Nordic island nation.',r:`<div class="hy"><span class="e">🧊</span>${w('LAND')}</div>`},
- {d:3,a:['watch out','watch it'],h:'Be careful!',r:`<div class="hy"><span class="e">⌚</span>${w('OUT')}</div>`},
- // --- text effects
- {d:3,a:['empty handed','emptyhanded'],h:'Coming back with nothing. Look at the letters themselves.',r:w('HANDED','outline')},
- {d:3,a:['empty nest','empty nest syndrome','empty nester'],h:'When the children have all left home.',r:w('NEST','outline')},
- {d:3,a:['empty promises','empty promise'],h:'Words with nothing behind them.',r:w('PROMISES','outline')},
- {d:3,a:['hollow victory','a hollow victory'],h:'A win that doesn’t feel like one.',r:w('VICTORY','outline')},
- {d:3,a:['beyond a shadow of a doubt','shadow of a doubt','without a shadow of a doubt'],h:'Absolutely certain.',r:w('DOUBT','shadow')},
- {d:3,a:['shadow boxing','shadowboxing'],h:'Sparring with nobody.',r:w('BOXING','shadow')},
- {d:3,a:['shadow cabinet','the shadow cabinet'],h:'The opposition’s team in Parliament.',r:w('CABINET','shadow')},
- {d:3,a:['blurred lines','blur the lines','blurring the lines'],h:'When the boundary isn’t clear.',r:w('LINES','blur')},
- {d:3,a:['fuzzy logic'],h:'Reasoning in shades of grey.',r:w('LOGIC','blur')},
- {d:3,a:['out of focus','unfocused'],h:'Not sharp.',r:w('FOCUS','blur')},
- {d:3,a:['bright idea','a bright idea'],h:'A clever thought.',r:w('IDEA','glow')},
- {d:3,a:['bright future','the future is bright','a bright future','the futures bright'],h:'Good things lie ahead.',r:w('FUTURE','glow')},
- {d:3,a:['sign on the dotted line'],h:'Agree to the contract.',r:w('SIGN','dotline')},
- // --- speech and thought bubbles
- {d:3,a:['speechless','lost for words','at a loss for words','nothing to say'],h:'Too stunned to talk.',r:R({type:'bubble',kind:'speech'})},
- {d:3,a:['food for thought'],h:'Something worth thinking about.',r:R({type:'bubble',kind:'thought',item:{type:'emoji',items:['🍔'],plus:false}})},
- {d:3,a:['train of thought'],h:'The thread of your thinking.',r:R({type:'bubble',kind:'thought',item:{type:'emoji',items:['🚂'],plus:false}})},
- {d:3,a:['lost in thought'],h:'Daydreaming deeply.',r:R({type:'bubble',kind:'thought',item:'LOST'})},
- {d:3,a:['a penny for your thoughts','penny for your thoughts','penny for them'],h:'What are you thinking about?',r:R({type:'bubble',kind:'thought',item:'1p'})},
- {d:3,a:['speak your mind'],h:'Say what you really think.',r:R({type:'bubble',kind:'speech',item:{type:'emoji',items:['🧠'],plus:false}})},
- {d:3,a:['word of mouth'],h:'How news spreads without adverts.',r:row('',`<div class="emo"><span>👄</span></div>`,R({type:'bubble',kind:'speech',item:'WORD'}))},
- {d:3,a:['second thoughts','on second thoughts','having second thoughts'],h:'Doubts about a decision.',r:R({type:'bubble',kind:'thought',item:'2nd'})},
- // --- Venn diagrams
- {d:3,a:['common ground'],h:'What two sides agree on.',r:R({type:'venn',middle:'GROUND'})},
- {d:3,a:['happy medium','a happy medium'],h:'A sensible compromise.',r:R({type:'venn',middle:'HAPPY'})},
- {d:3,a:['meet halfway','meet in the middle','meet half way','meet someone halfway'],h:'Compromise.',r:R({type:'venn',middle:'MEET'})},
- {d:3,a:['caught in the middle','stuck in the middle'],h:'Trapped between two sides.',r:R({type:'venn',middle:'CAUGHT'})},
- // ================= EXPERT (levels 4–8): two or three tricks per puzzle =================
- // helpers: E1 = one emoji; HY = emoji and words inline; RE = rotated emoji
- ...(()=>{
- const E1=e=>`<span class="e">${e}</span>`;
- const HY=(...p)=>`<div class="hy">${p.join('')}</div>`;
- const RE=e=>`<span class="e" style="display:inline-block;transform:rotate(180deg)">${e}</span>`;
- const EM=e=>({type:'emoji',items:[e],plus:false});
- const K=t=>R({type:'key',text:t});
- const KR=(...p)=>`<div class="keyrow">${p.join('')}</div>`;
- const CAL=(m,d)=>R(d==null?{type:'calendar',month:m}:{type:'calendar',month:m,day:d});
- const CLK=(h,m=0,st)=>R({type:'clock',hour:h,minute:m,style:st||[]});
- const SAY=(item,kind='speech')=>R({type:'bubble',kind,item});
- const HIGH=item=>R({type:'high',item});
- const LOW=item=>R({type:'low',item});
- const ON=(a,b)=>stk(a,b,false);
- return [
- // ---------- level 4: two tricks, gentle ----------
- {d:4,a:['top secret'],h:'Classified. Which part of the word can you see?',r:w('SECRET','tophalf')},
- {d:4,a:['bottom line','the bottom line'],h:'What it all comes down to.',r:w('LINE','bottomhalf')},
- {d:4,a:['top banana'],h:'The boss. Which part is showing?',r:w('BANANA','tophalf')},
- {d:4,a:['turn the tables','the tables have turned','tables have turned','turning the tables'],h:'Reverse the situation. What’s happened to the word?',r:w('TABLES','upside')},
- {d:4,a:['u turn','uturn'],h:'A complete change of direction.',r:w('U','upside huge')},
- {d:4,a:['keep your head above water','head above water','keeping your head above water'],h:'Only just coping. Think chemistry for the bottom word.',r:stk(w('HEAD'),w('H₂O'))},
- {d:4,a:['golden handshake'],h:'A generous goodbye payment. Name the element.',r:HY(w('Au'),E1('🤝'))},
- {d:4,a:['silver screen','the silver screen'],h:'The movies. Name the element.',r:HY(w('Ag'),E1('📺'))},
- {d:4,a:['sweet sixteen','sweet 16'],h:'A milestone birthday. Read the numeral.',r:HY(E1('🍬'),w('XVI'))},
- {d:4,a:['high five'],h:'A celebratory slap. Where is the numeral?',r:HIGH('V')},
- {d:4,a:['high tea'],h:'An afternoon meal with sandwiches and cake.',r:HIGH('T')},
- {d:4,a:['low key','lowkey'],h:'Quiet and understated.',r:LOW(EM('🔑'))},
- {d:4,a:['high horse','on your high horse','get off your high horse','on his high horse','on her high horse'],h:'Acting superior.',r:HIGH(EM('🐴'))},
- {d:4,a:['high note','a high note','on a high note','end on a high note'],h:'A good way to finish. Name the symbol.',r:HIGH('♪')},
- {d:4,a:['time flies','time flies when youre having fun'],h:'Especially when you’re having fun.',r:row('',CLK(3,0),HY(E1('🪰')))},
- {d:4,a:['time is money'],h:'Don’t waste it, said the businessman.',r:row('',CLK(9,0),w('='),w('£'))},
- {d:4,a:['watching the clock','watch the clock','clock watching','clockwatching','clock watcher'],h:'Waiting for home time.',r:row('',HY(E1('👀')),CLK(4,55))},
- {d:4,a:['teatime','tea time'],h:'Read the letter aloud, then look at the face.',r:row('',w('T'),CLK(4,0))},
- {d:4,a:['dead end','a dead end'],h:'No way through.',r:KR(HY(E1('💀')),K('END'))},
- {d:4,a:['think twice'],h:'Reconsider.',r:row('',SAY('?','thought'),w('×2'))},
- {d:4,a:['thinking cap','put your thinking cap on','put on your thinking cap','thinking caps'],h:'What you put on to solve a tricky problem.',r:SAY(EM('🧢'),'thought')},
- {d:4,a:['sweet talk','sweet talker','sweet talking','sweettalk'],h:'Flattery to win someone round.',r:SAY(EM('🍬'))},
- {d:4,a:['trash talk','trash talking','talking trash','talking rubbish','talk rubbish'],h:'Insults before the big match.',r:SAY(EM('🗑️'))},
- {d:4,a:['speak of the devil'],h:'Said when the person you were discussing walks in.',r:SAY(EM('😈'))},
- {d:4,a:['say cheese'],h:'What the photographer asks.',r:SAY(EM('🧀'))},
- {d:4,a:['money talks'],h:'Cash gets things done.',r:SAY(EM('💰'))},
- {d:4,a:['square root','the square root'],h:'A maths operation. What shape is around the symbol?',r:R({type:'shape',shape:'square',item:{type:'word',text:'√',size:'big'}})},
- {d:4,a:['nonstop','non stop'],h:'Without a break. What sign is that?',r:row('',w('NON'),R({type:'shape',shape:'octagon'}).replace('class="shp octagon"','class="shp octagon" style="width:110px;height:110px"'))},
- {d:4,a:['full stop'],h:'The punctuation mark that ends a sentence, in British English.',r:R({type:'shape',shape:'octagon',item:'FULL'})},
- {d:4,a:['ring of fire'],h:'A Johnny Cash song.',r:R({type:'ring',items:Array(8).fill(EM('🔥'))})},
- {d:4,a:['round of applause','a round of applause'],h:'Give them a hand.',r:R({type:'ring',items:Array(8).fill(EM('👏'))})},
- {d:4,a:['round robin','a round robin'],h:'A tournament where everyone plays everyone.',r:R({type:'ring',items:Array(6).fill({type:'word',text:'ROBIN',size:'small'})})},
- {d:4,a:['faded glory'],h:'Splendour that’s past its best. Look at the letters.',r:w('GLORY','faded')},
- {d:4,a:['toe the line','toeing the line'],h:'Follow the rules.',r:w('TOE','dotline')},
- {d:4,a:['pie chart'],h:'A round graph. Name the symbol.',r:HY(w('π'),E1('📊'))},
- {d:4,a:['let the cat out of the bag','cat out of the bag','the cat is out of the bag','cats out of the bag'],h:'Reveal the secret.',r:row('gap',`<div class="box"><span class="w sm">BAG</span></div>`,HY(E1('🐱')))},
- {d:4,a:['egg on your face','egg on my face','egg on his face','egg on her face','with egg on your face'],h:'Embarrassed after a mistake.',r:ON(HY(E1('🥚')),HY(E1('😳')))},
- {d:4,a:['keep your eye on the ball','eye on the ball','keep an eye on the ball','keep your eyes on the ball'],h:'Stay focused.',r:ON(HY(E1('👁️')),HY(E1('⚽')))},
- {d:4,a:['on the ball'],h:'Alert and quick. Where is the word?',r:ON(w('ON'),HY(E1('⚽')))},
- {d:4,a:['cool as a cucumber','as cool as a cucumber'],h:'Completely calm. Read the square button.',r:HY(E1('🆒'),w('AS A','sm'),E1('🥒'))},
- {d:4,a:['raining cats and dogs','its raining cats and dogs','rain cats and dogs'],h:'A downpour.',r:col(HY(E1('🌧️')),HY(E1('🐱'),E1('🐶')),HY(E1('🐶'),E1('🐱')))},
- {d:4,a:['march hare','the march hare','mad as a march hare','as mad as a march hare'],h:'Alice met him at a tea party.',r:row('',CAL('MAR'),HY(E1('🐇')))},
- {d:4,a:['june bug','junebug'],h:'A beetle that appears in early summer.',r:row('',CAL('JUN'),HY(E1('🐞')))},
- {d:4,a:['march madness','madness'],h:'A US college basketball frenzy.',r:row('',CAL('MAR'),HY(E1('🤪')))},
- {d:4,a:['101 dalmatians','one hundred and one dalmatians','a hundred and one dalmatians','hundred and one dalmatians'],h:'A Disney film full of spotty puppies. Read the numeral.',r:HY(w('CI'),E1('🐶'),w('s','sm'))},
- // ---------- level 5: two tricks, less obvious ----------
- {d:5,a:['bet your bottom dollar','you can bet your bottom dollar','bet my bottom dollar'],h:'Be absolutely sure.',r:row('',w('BET UR','sm'),w('DOLLAR','bottomhalf'))},
- {d:5,a:['dead in the water'],h:'A plan with no hope of going anywhere.',r:R({type:'word',text:'H₂DEADO',highlight:'DEAD'})},
- {d:5,a:['iron out the kinks','iron out the creases','iron out'],h:'Fix the small problems. Name the element, then check where it is.',r:R({type:'box',inside:{type:'word',text:'KINKS',size:'small'},outside:'Fe'})},
- {d:5,a:['lead the way'],h:'Go first. The element is spelled the same but said differently.',r:w('Pb THE WAY')},
- {d:5,a:['go down like a lead balloon','went down like a lead balloon','lead balloon','down like a lead balloon'],h:'A joke that flops completely.',r:HY(w('↓'),w('Pb'),E1('🎈'))},
- {d:5,a:['dressed to the nines','dressed up to the nines'],h:'Very smartly turned out. Read the number, then the numerals.',r:w('DRESSED 2 THE IXs','sm')},
- {d:5,a:['forty winks'],h:'A short nap. Read the numeral.',r:HY(w('XL'),E1('😉'),w('s'))},
- {d:5,a:['turn over a new leaf','turned over a new leaf','turning over a new leaf'],h:'Make a fresh start. What’s happened to the words?',r:w('NEW LEAF','upside')},
- {d:5,a:['flip flop','flipflop','flip flops'],h:'Summer footwear, or changing your mind.',r:w('FLOP','upside')},
- {d:5,a:['turncoat','turn coat'],h:'A traitor who switches sides.',r:HY(RE('🧥'))},
- {d:5,a:['best of both worlds','the best of both worlds'],h:'Having it all. Where does BEST sit?',r:R({type:'venn',middle:'BEST'})},
- {d:5,a:['make ends meet','making ends meet'],h:'Just about afford to live.',r:R({type:'venn',middle:'ENDS'})},
- {d:5,a:['bull in a china shop','a bull in a china shop','like a bull in a china shop'],h:'Clumsy and destructive.',r:T(w('CHI'),HY(E1('🐂')),w('NA'))},
- {d:5,a:['kill two birds with one stone','two birds with one stone','two birds one stone','killing two birds with one stone'],h:'Do two jobs at once.',r:row('',w('BIRD','strike sm'),w('BIRD','strike sm'),w('1','sm'),HY(E1('🪨')))},
- {d:5,a:['a thousand times no','thousand times no'],h:'An emphatic refusal. Read the numeral and the symbol.',r:w('M × NO')},
- {d:5,a:['working round the clock','working around the clock','round the clock','around the clock','work round the clock','work around the clock'],h:'Without stopping, day and night.',r:R({type:'ring',text:'WORKING',center:{type:'clock',hour:2,minute:0}})},
- {d:5,a:['high noon'],h:'A classic western, and the time of a showdown.',r:HIGH({type:'clock',hour:12,minute:0})},
- {d:5,a:['the night before christmas','twas the night before christmas','night before christmas','christmas eve'],h:'A famous poem begins with it.',r:row('',HY(E1('🌙')),CAL('DEC',24))},
- {d:5,a:['born on the fourth of july','born on the 4th of july'],h:'A Tom Cruise film and a Springsteen song (almost).',r:row('',HY(E1('👶')),CAL('JUL',4))},
- {d:5,a:['deck the halls','deck the halls with boughs of holly'],h:'A carol. Say the month aloud.',r:row('',CAL('DEC'),w('THE HALLS','sm'))},
- {d:5,a:['novice'],h:'A beginner. Say the month, then the picture.',r:row('',CAL('NOV'),HY(E1('🧊')))},
- {d:5,a:['control yourself','control urself'],h:'Calm down! Read the key, then the letters aloud.',r:KR(K('CTRL'),w('U R SELF','sm'))},
- {d:5,a:['home sweet home'],h:'Stitched on a cushion by the door.',r:KR(K('HOME'),HY(E1('🍬')),K('HOME'))},
- {d:5,a:['keep tabs on','keeping tabs on','keep tabs','keep tabs on someone'],h:'Watch closely.',r:KR(w('KEEP','sm'),K('TAB'),K('TAB'),w('ON','sm'))},
- {d:5,a:['enter the dragon'],h:'A Bruce Lee film.',r:KR(K('ENTER'),w('THE','sm'),HY(E1('🐉')))},
- {d:5,a:['insert coin','insert coins'],h:'What an arcade machine asks for.',r:KR(K('INS'),HY(E1('🪙')))},
- {d:5,a:['alternative rock','alt rock','altrock'],h:'A music genre. Read the key.',r:KR(K('ALT'),HY(E1('🪨')))},
- {d:5,a:['small talk'],h:'Chat about the weather.',r:SAY({type:'word',text:'blah blah blah',size:'tiny'})},
- {d:5,a:['double talk','doubletalk'],h:'Deliberately confusing speech.',r:row('',SAY({type:'word',text:'blah',size:'small'}),w('×2'))},
- {d:5,a:['wishful thinking'],h:'Hoping for the unlikely.',r:SAY(EM('🌠'),'thought')},
- {d:5,a:['circle of life','the circle of life'],h:'A Lion King song.',r:R({type:'ring',items:['🌱','🥚','🐣','🐓','🦁','💀'].map(EM)})},
- {d:5,a:['ring a ring o roses','ring a ring of roses','ring around the rosie','ring around the rosy','ring a roses','ring o roses'],h:'A nursery rhyme with a falling-down ending.',r:R({type:'ring',items:Array(8).fill(EM('🌹'))})},
- {d:5,a:['lord of the rings','the lord of the rings'],h:'One to rule them all.',r:R({type:'ring',items:Array(8).fill(EM('💍')),center:'LORD'})},
- {d:5,a:['go round the bend','gone round the bend','round the bend','go around the bend','driven round the bend','drive me round the bend'],h:'Go mad.',r:R({type:'ring',items:Array(6).fill('GO'),center:'BEND'})},
- {d:5,a:['stop and smell the roses','stop and smell the flowers'],h:'Slow down and enjoy life.',r:R({type:'shape',shape:'octagon',item:{type:'emoji',items:['👃','🌹'],plus:false}})},
- {d:5,a:['seeing double','double vision'],h:'What one drink too many does to your eyes.',r:w('SEEING','shadow')},
- {d:5,a:['in the limelight','the limelight','limelight'],h:'The centre of attention. What colour, and what’s it doing?',r:w('LIME','glow green')},
- {d:5,a:['the invisible man','invisible man'],h:'H. G. Wells wrote about him.',r:w('MAN','faded')},
- {d:5,a:['more or less'],h:'Approximately. Name the symbols.',r:w('> OR <')},
- {d:5,a:['all things being equal','all things equal','other things being equal'],h:'If nothing else changes.',r:w('ALL THINGS =')},
- {d:5,a:['plus size','plus sized'],h:'A clothing range. Name the symbol, then the label.',r:w('+ XL')},
- {d:5,a:['pros and cons','pluses and minuses','plusses and minuses','plus and minus','the pros and cons'],h:'Weighing up a decision.',r:w('+ & −')},
- {d:5,a:['nothing to lose','got nothing to lose','ive got nothing to lose'],h:'No risk at all. Read the numbers as words.',r:w('0 2 LOSE')},
- {d:5,a:['im up for it','up for it','i am up for it'],h:'Keen to give it a go.',r:w("I'M ↑ 4 IT")},
- {d:5,a:['see you later alligator','see ya later alligator','see you later aligator'],h:'And the reply is “in a while, crocodile”.',r:HY(w('CU L8R'),E1('🐊'))},
- {d:5,a:['double dutch'],h:'Gibberish, or a skipping game.',r:HY(E1('🇳🇱'),w('×2'))},
- {d:5,a:['turkish delight'],h:'A sweet the White Witch offered Edmund.',r:HY(E1('🇹🇷'),E1('😄'))},
- {d:5,a:['mexican wave','the mexican wave'],h:'It travels round a stadium.',r:HY(E1('🇲🇽'),E1('👋'))},
- {d:5,a:['french toast'],h:'Eggy bread. Think about what the glasses are doing.',r:HY(E1('🇫🇷'),E1('🥂'))},
- {d:5,a:['the american dream','american dream'],h:'A house, a car, a white picket fence.',r:row('',HY(E1('🇺🇸')),SAY(EM('🏡'),'thought'))},
- {d:5,a:['on all fours'],h:'Crawling. What’s underneath?',r:stk(w('ON'),w('4 4 4 4'),false)},
- {d:5,a:['nine to five','9 to 5','9 to five','nine to 5'],h:'An office job. Read the numbers, then the numeral.',r:w('9 2 V')},
- {d:5,a:['twenty questions','20 questions'],h:'A guessing game. Read the numeral, then name the symbol.',r:w('XX ?s')},
- {d:5,a:['the third man','third man'],h:'An Orson Welles film set in Vienna.',r:w('IIIrd MAN')},
- {d:5,a:['a needle in a haystack','needle in a haystack','looking for a needle in a haystack'],h:'Almost impossible to find.',r:T(w('HAYST','sm'),HY(E1('🪡')),w('ACK','sm'))},
- {d:5,a:['a fly in the ointment','fly in the ointment'],h:'One small problem spoiling things.',r:T(w('OINT','sm'),HY(E1('🪰')),w('MENT','sm'))},
- {d:5,a:['a frog in your throat','frog in your throat','frog in my throat','a frog in my throat'],h:'A croaky voice.',r:T(w('THR'),HY(E1('🐸')),w('OAT'))},
- {d:5,a:['ants in your pants','ants in my pants','ants in his pants','ants in her pants','ants in the pants'],h:'Too fidgety to sit still.',r:T(w('PA'),HY(E1('🐜')),w('NTS'))},
- {d:5,a:['a bee in your bonnet','bee in your bonnet','bee in my bonnet','bee in her bonnet','bee in his bonnet'],h:'Obsessed with something.',r:T(w('BON'),HY(E1('🐝')),w('NET'))},
- {d:5,a:['money in the bank','like money in the bank'],h:'A safe bet.',r:T(w('BA'),HY(E1('💰')),w('NK'))},
- {d:5,a:['a chip on your shoulder','chip on your shoulder','chip on my shoulder','chip on his shoulder','chip on her shoulder'],h:'A lingering grudge.',r:ON(HY(E1('🍟')),HY(E1('💪')))},
- {d:5,a:['a monkey on your back','monkey on your back','monkey on my back','monkey on his back'],h:'A burden you can’t shake off. Read the arrow button.',r:ON(HY(E1('🐒')),HY(E1('🔙')))},
- {d:5,a:['a pat on the back','pat on the back'],h:'Praise.',r:ON(w('PAT'),HY(E1('🔙')))},
- {d:5,a:['back in black'],h:'An AC/DC album.',r:T(w('BLA'),HY(E1('🔙')),w('CK'))},
- {d:5,a:['on top of the world','sitting on top of the world','feeling on top of the world'],h:'Blissfully happy.',r:HY(w('ON','sm'),E1('🔝'),w('OF THE','sm'),E1('🌍'))},
- {d:5,a:['top of the morning','top of the morning to you'],h:'An old Irish greeting.',r:HY(E1('🔝'),w('OF THE','sm'),E1('🌅'))},
- {d:5,a:['free for all','a free for all'],h:'A chaotic scramble with no rules.',r:HY(E1('🆓'),w('4 ALL'))},
- {d:5,a:['new kid on the block','the new kid on the block','new kids on the block'],h:'The latest arrival.',r:ON(HY(E1('🆕'),E1('🧒')),HY(E1('🧱')))},
- {d:5,a:['the end of the road','end of the road'],h:'Nowhere left to go.',r:HY(E1('🔚'),w('OF THE','sm'),E1('🛣️'))},
- {d:5,a:['lowball','low ball','lowball offer'],h:'A cheeky, too-small offer.',r:LOW(EM('⚽'))},
- {d:5,a:['highball','a highball'],h:'A tall mixed drink.',r:HIGH(EM('⚽'))},
- {d:5,a:['high stakes'],h:'A risky game. The picture sounds like the answer.',r:HIGH(EM('🥩'))},
- {d:5,a:['low blow','a low blow'],h:'An unfair attack.',r:LOW(EM('💨'))},
- {d:5,a:['high flyer','high flier','highflyer','high flyers'],h:'A very successful person.',r:HIGH(EM('🪰'))},
- {d:5,a:['high spirits','in high spirits'],h:'Lively and cheerful.',r:HIGH(EM('👻'))},
- {d:5,a:['once in a blue moon'],h:'Very rarely. Notice the colour.',r:T(w('MO','blue'),w('ONCE'),w('ON','blue'))},
- {d:5,a:['red in the face'],h:'Embarrassed or furious.',r:T(w('FA'),w('RED','red'),w('CE'))},
- {d:5,a:['green around the gills','green about the gills','green round the gills'],h:'Looking queasy.',r:R({type:'ring',items:[...'GREEN'].map(c=>({type:'word',text:c,style:'green'})),center:'GILLS'})},
- // ---------- level 6: three moving parts ----------
- {d:6,a:['six of one half a dozen of the other','six of one and half a dozen of the other','six of one half a dozen of another'],h:'It makes no difference either way.',r:col(w('VI OF 1'),w('DOZEN','tophalf'),w('OF THE OTHER','sm'))},
- {d:6,a:['at sixes and sevens'],h:'In total confusion. Name the symbol, read the numerals.',r:w('@ VIs & VIIs')},
- {d:6,a:['a picture is worth a thousand words','a picture paints a thousand words','picture is worth a thousand words','a picture speaks a thousand words'],h:'Show, don’t tell. Read the numeral.',r:HY(E1('🖼️'),w('= M WORDS','sm'))},
- {d:6,a:['back to the future'],h:'A time-travel film. Look at the last word.',r:row('',w('2 THE'),w('FUTURE','mirror'))},
- {d:6,a:['give 110 percent','give a hundred and ten percent','give one hundred and ten percent','110 percent','give 110','give 110 per cent'],h:'Try beyond your best. Read the numeral.',r:w('GIVE CX%')},
- {d:6,a:['less is more'],h:'Simplicity wins. Name all three symbols.',r:w('< = >')},
- {d:6,a:['the whole is greater than the sum of its parts','greater than the sum of its parts','more than the sum of its parts','the whole is more than the sum of its parts'],h:'Together they’re better.',r:col(w('THE WHOLE >','sm'),w('∑ OF ITS PARTS','sm'))},
- {d:6,a:['money is the root of all evil','the love of money is the root of all evil','root of all evil'],h:'A saying about greed.',r:w('£ = √ OF ALL EVIL','sm')},
- {d:6,a:['love all','love love'],h:'What a tennis umpire calls at the start.',r:w('0 – 0')},
- {d:6,a:['second to none'],h:'The very best. Read every mark as a word.',r:w('2nd 2 0')},
- {d:6,a:['first among equals'],h:'The leader of a group of peers. Name the symbols either side.',r:w('= 1st =')},
- {d:6,a:['third time lucky','third times the charm','third time is the charm','third time is lucky'],h:'Keep trying!',r:row('',w('3rd'),CLK(3,0),HY(E1('🍀')))},
- {d:6,a:['to be or not to be','to be or not to be that is the question'],h:'Hamlet’s question.',r:HY(w('2'),E1('🐝'),w('OR NOT 2','sm'),E1('🐝'))},
- {d:6,a:['excuse my french','pardon my french'],h:'An apology for swearing. Say the letters aloud.',r:HY(w('XQQ MY'),E1('🇫🇷'))},
- {d:6,a:['its all greek to me','greek to me','it is all greek to me','all greek to me'],h:'I don’t understand a word.',r:w('αβγ 2 ME')},
- {d:6,a:['the spanish inquisition','spanish inquisition','nobody expects the spanish inquisition'],h:'Nobody expects it.',r:HY(E1('🇪🇸'),w('???'))},
- {d:6,a:['chinese whispers','chinese whisper'],h:'A message that gets garbled as it’s passed on.',r:row('',HY(E1('🇨🇳')),SAY({type:'word',text:'psst…',size:'small'}))},
- {d:6,a:['dutch courage'],h:'Bravery from a bottle. What does the animal stand for?',r:HY(E1('🇳🇱'),E1('🦁'))},
- {d:6,a:['talk is cheap'],h:'Actions matter more.',r:SAY({type:'word',text:'50% OFF',size:'small'})},
- {d:6,a:['great minds think alike','think alike'],h:'Said when two people have the same idea.',r:row('',SAY(EM('💡'),'thought'),w('='),SAY(EM('💡'),'thought'))},
- {d:6,a:['a shadow of your former self','shadow of your former self','shadow of my former self','a shadow of my former self','shadow of his former self','a shadow of his former self','shadow of her former self','a shadow of her former self','shadow of its former self','a shadow of its former self'],h:'Much weaker than you used to be. What’s left of the words?',r:w('FORMER SELF','shadow faded')},
- {d:6,a:['light at the end of the tunnel','the light at the end of the tunnel'],h:'Hope after a hard time. Look at the last letter.',r:T(w('TUNNE'),w('L','glow'))},
- {d:6,a:['scapegoat','scape goat','escape goat'],h:'Someone blamed for everyone else. Its origin really is in the picture.',r:KR(K('ESC'),HY(E1('🐐')))},
- {d:6,a:['in the heat of the moment','heat of the moment'],h:'Without thinking it through.',r:T(w('MO'),HY(E1('🔥')),w('MENT'))},
- {d:6,a:['bats in the belfry','bats in your belfry','bats in his belfry'],h:'Slightly mad. A belfry is a bell tower.',r:T(w('BEL'),HY(E1('🦇')),w('FRY'))},
- {d:6,a:['skeletons in the cupboard','a skeleton in the cupboard','skeleton in the cupboard','skeleton in the closet','skeletons in the closet','a skeleton in the closet'],h:'An embarrassing secret from the past.',r:T(w('CUP'),HY(E1('💀')),w('BOARD'))},
- {d:6,a:['one foot in the grave','1 foot in the grave'],h:'Very old, or a British sitcom.',r:T(w('GR'),HY(w('1'),E1('🦶')),w('AVE'))},
- {d:6,a:['the ball is in your court','ball is in your court','ball in your court','the balls in your court'],h:'It’s your move. Read the letters aloud.',r:row('',w('UR'),T(w('CO'),HY(E1('🎾')),w('URT')))},
- {d:6,a:['sooner or later'],h:'Eventually. Read the button, then the letters and number.',r:HY(E1('🔜'),w('ER OR L8R'))},
- {d:6,a:['the twelve days of christmas','twelve days of christmas','12 days of christmas'],h:'A carol with a partridge in a pear tree.',r:row('',w('XII'),R({type:'repeat',item:{type:'calendar',month:'DEC',day:25},count:2}).replace('class="rep"','class="rep" style="max-width:none"'))},
- {d:6,a:['the pen is mightier than the sword','pen is mightier than the sword'],h:'Words beat weapons. Read the symbol in the middle loosely.',r:HY(E1('🖊️'),w('>','huge'),E1('🗡️'))},
- // ---------- level 7: fiendish ----------
- {d:7,a:['may the force be with you','may the force be with u'],h:'A Star Wars blessing. Read the month, then every letter and number aloud.',r:row('',CAL('MAY'),w('THE 4CE B WITH U','sm'))},
- {d:7,a:['turn up for the books','a turn up for the books'],h:'A big surprise. What’s happened to UP?',r:HY(w('UP','upside'),w('4 THE','sm'),E1('📚'))},
- {d:7,a:['for the time being'],h:'For now. Read the number, look at the face, then say the picture plus the letters.',r:row('',w('4 THE','sm'),CLK(10,10),HY(E1('🐝'),w('ING','sm')))},
- {d:7,a:['love at first sight'],h:'In tennis the number has another name. Then name the symbol.',r:HY(w('0 @ 1st'),E1('👁️'))},
- {d:7,a:['love is blind'],h:'In tennis the number has another name. What can’t the monkey do?',r:HY(w('0 IS'),E1('🙈'))},
- {d:7,a:['time and tide wait for no man','time and tide waits for no man'],h:'You can’t hold back the hours or the sea.',r:col(row('',CLK(6,0),w('&'),HY(E1('🌊'))),w('W8 4 NO MAN','sm'))},
- // ---------- level 8: the summit ----------
- {d:8,a:['i think therefore i am'],h:'Descartes. The three dots are a maths word.',r:HY(w('I'),SAY(null,'thought'),w('∴ I AM'))},
- {d:8,a:['two wrongs dont make a right','2 wrongs dont make a right','two wrongs do not make a right'],h:'Revenge isn’t the answer. Read it as a sum.',r:w('✗ + ✗ ≠ ✓')},
- {d:8,a:['a penny saved is a penny earned','penny saved is a penny earned','a penny saved is a penny gained'],h:'Benjamin Franklin’s thrifty advice. What does the floppy disk do?',r:HY(w('1p'),E1('💾'),w('= 1p'),E1('💰'))},
- {d:8,a:['money doesnt grow on trees','money does not grow on trees'],h:'What parents say when you ask for something.',r:ON(w('£','strike huge'),HY(E1('🌳')))},
- {d:6,a:['the tip of the iceberg','tip of the iceberg','just the tip of the iceberg'],h:'A small sign of a much bigger problem. How much can you see?',r:T(w('I'),w('CEBERG','faded'))},
- {d:6,a:['a storm in a teacup','storm in a teacup','tempest in a teacup'],h:'A big fuss about nothing.',r:T(w('TEA'),HY(E1('⛈️')),w('CUP'))},
- {d:6,a:['when pigs fly','pigs might fly','and pigs might fly'],h:'Said of something that will never happen.',r:HY(E1('🐷'),E1('✈️'))},
- {d:7,a:['the early bird catches the worm','early bird catches the worm','the early bird gets the worm','early bird gets the worm'],h:'Get up first to win. What time is it, and what is the glove for?',r:HY(R({type:'clock',hour:5,minute:0}),E1('🐦'),E1('🧤'),E1('🪱'))},
- {d:7,a:['curiosity killed the cat'],h:'A warning against being nosy. What does the question mark stand for?',r:HY(w('?','huge'),E1('☠️'),E1('🐱'))},
- {d:7,a:['out of sight out of mind'],h:'Forgotten once gone. Where is each picture?',r:row('gap',row('',`<div class="box" style="min-width:60px;min-height:60px"></div>`,HY(E1('👁️'))),row('',`<div class="box" style="min-width:60px;min-height:60px"></div>`,HY(E1('🧠'))))},
- {d:7,a:['lightning never strikes twice','lightning doesnt strike twice','lightning never strikes twice in the same place','lightning never strikes the same place twice','lightning never strikes the same spot twice'],h:'The same misfortune won’t happen again.',r:HY(E1('⚡'),w('✗ ×2'))},
- {d:8,a:['a bird in the hand is worth two in the bush','bird in the hand is worth two in the bush','a bird in hand is worth two in the bush'],h:'Keep what you’ve got.',r:HY(E1('🐦'),w('IN','sm'),E1('✋'),w('= 2'),E1('🐦'),w('IN','sm'),E1('🌳'))},
- {d:8,a:['dont put all your eggs in one basket','all your eggs in one basket','put all your eggs in one basket','all eggs in one basket','never put all your eggs in one basket'],h:'Spread your risks.',r:HY(w('✗'),E1('🥚'),E1('🥚'),E1('🥚'),w('→ 1'),E1('🧺'))},
- {d:8,a:['a leopard cant change its spots','leopard cant change its spots','a leopard never changes its spots','a leopard doesnt change its spots','a leopard can never change its spots'],h:'People don’t really change. The triangle is a science word.',r:HY(E1('🐆'),w('✗ Δ'),w('ITS SPOTS','sm'))},
- ];})(),
-];
-B.forEach((p,i)=>{p.id='b'+i});
-
 /* ================= Claude-written library ================= */
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 let LIB=[];
 try{LIB=JSON.parse(store('rb_lib')||'[]').filter(p=>{try{p.r=R(p.layout);return Array.isArray(p.a)&&p.a.length}catch(e){return false}})}catch(e){LIB=[]}
 LIB.forEach(p=>{p.gen=true});
-function saveLib(){store('rb_lib',JSON.stringify(LIB.slice(-400).map(({id,d,a,h,layout})=>({id,d,a,h,layout}))))}
+function saveLib(){store('rb_lib',JSON.stringify(LIB.slice(-400).map(({id,d,a,h,m,layout})=>({id,d,a,h,m,layout}))))}
 const ALL=()=>B.concat(LIB);
 
 let sample=null;
@@ -1263,12 +619,8 @@ const LEVEL_BRIEF=lv=>{
   const n=lv-3;
   return `EXPERT, level ${n} of an endless climb (difficulty grows every level, this is level ${lv} overall). Combine two mechanisms in one puzzle (e.g. position plus counting, sound-alike plus size), use well-known idioms, film or book titles and sayings, and make each level noticeably harder than the one before. ${n>=4?'At this height, prefer three-part phrases and subtler cues, while staying fair.':''} Every puzzle must still be solvable by a sharp adult with the clue.`;
 };
-function genPrompt(level,count,known){
-  return `You write rebus puzzles (word-picture riddles) for a puzzle game. Write ${count} NEW puzzles.
-
-Difficulty: ${LEVEL_BRIEF(level)}
-
-Each puzzle is drawn from a small layout vocabulary. A "node" is either a plain string (shown as a bold word) or one of these objects:
+/* The layout vocabulary, shared by the writing prompt and the blind solving check. */
+const VOCAB=`Each puzzle is drawn from a small layout vocabulary. A "node" is either a plain string (shown as a bold word) or one of these objects:
 - {"type":"word","text":"DEAL","size":"normal|small|big|tiny","style":["tilted"|"upside"|"mirror"|"spaced"|"faded"|"strike"|"underline"|"cracked"|"circled"|"red"|"green"|"vertical" (reads bottom to top)|"marked" (arrow under it, to pick one item out of a repeated row)],"highlight":"optional substring shown in another colour"}
 - {"type":"emoji","items":["☀️","🌸"],"plus":true}   (plus:false shows them side by side without +)
 - {"type":"over","top":node,"bottom":node}   (top word above a line, bottom below: "MIND over MATTER")
@@ -1291,17 +643,43 @@ Each puzzle is drawn from a small layout vocabulary. A "node" is either a plain 
 - {"type":"venn","middle":node}   (two overlapping circles, item in the overlap)
 Extra word styles: "tophalf" (only the top half of the letters shows), "outline" (hollow letters), "shadow", "blur", "glow", "dotline" (sits on a dotted line).
 Text may use symbols that are read aloud or named: √ ∑ Δ π ÷ × = > < ° ♠ ♣ ♦ ♪ ♯ ♭ ♚ ♛ ♞ ♟ ♜ £ $ ¢ € ↑ ↓ ← → ? ! # * / | ^ @ { } ( ), chemical symbols (Fe, Au, Ag), Roman numerals, unit abbreviations (ft, yd, lb).
-Strings max 40 characters. Nest at most 3 levels.
+Strings max 40 characters. Nest at most 3 levels.`;
+function genPrompt(level,count,known){
+  return `You write rebus puzzles (word-picture riddles) for a puzzle game. Write ${count} NEW puzzles.
+
+Difficulty: ${LEVEL_BRIEF(level)}
+
+${VOCAB}
 
 Rules:
 - The answer must be a common English word, phrase, idiom or title, and the picture must encode it logically and unambiguously. Check each one: reading the picture aloud should produce the answer.
 - Never write the answer itself plainly as a word in the picture.
 - "answers": 2-4 accepted spellings/variants, the main answer first, lowercase.
 - "clue": one short sentence that nudges without giving it away (under 110 characters).
+- "meaning": one plain sentence saying what the answer means, for players who don't know the phrase (under 160 characters).
 - Do not reuse any of these answers: ${known.join('; ')}
 
 Reply with only a JSON array, one object per puzzle, like:
-[{"answers":["mind over matter"],"clue":"Willpower beats the body.","layout":{"type":"over","top":"MIND","bottom":"MATTER"}}]`;
+[{"answers":["mind over matter"],"clue":"Willpower beats the body.","meaning":"Using willpower to overcome a physical problem, like pain or tiredness.","layout":{"type":"over","top":"MIND","bottom":"MATTER"}}]`;
+}
+function solvePrompt(items){
+  return `Solve these rebus puzzles (word-picture riddles). ${VOCAB}
+
+Puzzles:
+${items.map((g,i)=>`${i+1}. Clue: ${String(g.clue||'')}\n   Layout: ${JSON.stringify(g.layout)}`).join('\n')}
+
+For each puzzle, work out the common word, phrase, idiom or title the picture encodes when read aloud.
+Reply with only a JSON array of ${items.length} strings, one answer per puzzle, in order.`;
+}
+/* A fresh request solves the new puzzles without seeing the answers. Only the ones it gets
+   right (or nearly) are kept. If the check itself can't run, the batch is kept unchecked. */
+async function blindCheck(cands){
+  try{
+    const res=await sample.json(solvePrompt(cands.map(c=>c.g)),{cache:false});
+    const guesses=Array.isArray(res)?res:(res&&Array.isArray(res.answers)?res.answers:null);
+    if(!guesses) return cands;
+    return cands.filter((c,i)=>{const r=judge(String(guesses[i]??''),c.a);return r==='right'||r==='close'});
+  }catch(e){ return cands }
 }
 const nkey=s=>norm(s).replace(/ /g,'');
 async function generate(level,count=6){
@@ -1312,10 +690,11 @@ async function generate(level,count=6){
     try{
       const knownSet=new Set(ALL().map(p=>nkey(p.a[0])));
       const known=ALL().map(p=>p.a[0]).slice(-220);
-      const res=await sample.json(genPrompt(level,count,known),{cache:false});
+      // ask for a couple extra, since the blind check drops the ones that don't read clearly
+      const res=await sample.json(genPrompt(level,count+2,known),{cache:false});
       const arr=Array.isArray(res)?res:(res&&Array.isArray(res.puzzles)?res.puzzles:[]);
-      let added=0;
-      for(const g of arr.slice(0,count+2)){
+      const cands=[];
+      for(const g of arr.slice(0,count+4)){
         try{
           const a=(g.answers||[]).map(x=>String(x).trim()).filter(x=>x&&x.length<=60).slice(0,5);
           if(!a.length) continue;
@@ -1323,9 +702,13 @@ async function generate(level,count=6){
           const r=R(g.layout);
           const flat=JSON.stringify(g.layout).toLowerCase().replace(/[^a-z]/g,'');
           if(nkey(a[0]).length>5 && flat.includes(nkey(a[0]))) continue; // answer written plainly
-          const p={id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:level,a,h:String(g.clue||'Think about position, size and sound.').slice(0,140),layout:g.layout,r,gen:true};
-          LIB.push(p);knownSet.add(nkey(a[0]));added++;
+          cands.push({g,a,r});knownSet.add(nkey(a[0]));
         }catch(e){}
+      }
+      let added=0;
+      for(const {g,a,r} of (cands.length?await blindCheck(cands):[]).slice(0,count)){
+        LIB.push({id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),d:level,a,h:String(g.clue||'Think about position, size and sound.').slice(0,140),m:g.meaning?String(g.meaning).slice(0,200):undefined,layout:g.layout,r,gen:true});
+        added++;
       }
       if(added) saveLib();
       if(!added) genState.failed=true;
@@ -1382,7 +765,9 @@ const fine=()=>window.matchMedia('(pointer:fine)').matches;
 
 /* ================= shared card ================= */
 let mode='practice', cur=null, hintsUsed=0, wrongs=0, settled=false;
-const scored=()=>mode!=='practice';
+let trail=[]; // what happened on this puzzle, in order: h = hint, x = wrong guess (the Daily share grid)
+const scored=()=>mode==='quiz'||mode==='endless'; // points on the line
+const oneShot=()=>mode!=='practice';            // no skipping; Reveal becomes Give up
 
 function tierLabel(p){
   const t=tierOf(p.d);const [name,color]=TIER[t];
@@ -1391,27 +776,35 @@ function tierLabel(p){
 }
 function setCardEnabled(on){['guess','checkBtn','hintBtn','revealBtn'].forEach(id=>$(id).disabled=!on)}
 function showPuzzle(p,meta){
-  cur=p;hintsUsed=0;wrongs=0;settled=false;
+  cur=p;hintsUsed=0;wrongs=0;settled=false;trail=[];
   $('cTier').innerHTML=tierLabel(p);
   $('cMeta').textContent=meta;
-  $('pz').innerHTML=p.r;
+  $('pz').innerHTML=p.r;setBoardLabel(p);
   $('cardActions').hidden=false;$('hintBtn').hidden=false;$('revealBtn').hidden=false;
   $('card').style.setProperty('--tc',TIER[tierOf(p.d)][1]);
-  hideStamp();setRateKey(null);
-  $('nextBtn').className=scored()?'btn go':'btn ghost sm';
+  hideStamp();setRateKey(null);showMeaning();
+  $('nextBtn').className=oneShot()?'btn go':'btn ghost sm';
   $('hints').innerHTML='';feedback('','info');
   $('guess').value='';setCardEnabled(true);
-  $('nextBtn').hidden=scored();
-  $('nextBtn').textContent=scored()?'Next':'Skip';
-  $('revealBtn').textContent=scored()?'Give up':'Reveal';
+  $('nextBtn').hidden=oneShot();
+  $('nextBtn').textContent=oneShot()?'Next':'Skip';
+  $('nextBtn').title=oneShot()?'':'Skip (Esc)';
+  $('revealBtn').textContent=oneShot()?'Give up':'Reveal';
   updateHintCost();
   $('board').classList.remove('shake','win');
   if(fine()) $('guess').focus();
 }
+/* The board is one image to a screen reader, labelled with a description of the picture. */
+function setBoardLabel(p){
+  const pz=$('pz');let label='';
+  if(p){try{label=p.alt||describe(pz)}catch(e){}}
+  if(label){pz.setAttribute('role','img');pz.setAttribute('aria-label','Puzzle: '+label)}
+  else{pz.removeAttribute('role');pz.removeAttribute('aria-label')}
+}
 function showBoardMessage(html){
-  cur=null;settled=true;hideStamp();setRateKey(null);$('card').style.removeProperty('--tc');
+  cur=null;settled=true;hideStamp();setRateKey(null);showMeaning();$('card').style.removeProperty('--tc');
   $('cTier').innerHTML='';$('cMeta').textContent='';
-  $('pz').innerHTML=`<div class="boardmsg">${html}</div>`;
+  $('pz').innerHTML=`<div class="boardmsg">${html}</div>`;setBoardLabel(null);
   $('hints').innerHTML='';feedback('','info');setCardEnabled(false);$('nextBtn').hidden=true;
 }
 function updateHintCost(){
@@ -1421,14 +814,18 @@ function updateHintCost(){
 function feedback(msg,kind){const f=$('fb');f.textContent=msg;f.className='feedback '+kind}
 function anim(c){const b=$('board');b.classList.remove('shake','win');void b.offsetWidth;b.classList.add(c)}
 
-$('hintBtn').onclick=()=>{
-  if(settled||!cur||hintsUsed>=2) return;
+function addHint(){
   hintsUsed++;
   const h=document.createElement('div');h.className='hint';
   h.innerHTML = hintsUsed===1 ? `<span class="lab">Clue</span>${esc(cur.h)}` : `<span class="lab">Letters</span>${pattern(cur.a[0])}`;
   $('hints').appendChild(h);
   updateHintCost();
+}
+$('hintBtn').onclick=()=>{
+  if(settled||!cur||hintsUsed>=2) return;
+  addHint();trail.push('h');
   if(scored()) refreshMeta();
+  if(mode==='daily') dailySave();
 };
 $('form').onsubmit=e=>{
   e.preventDefault();
@@ -1437,45 +834,74 @@ $('form').onsubmit=e=>{
   const r=judge($('guess').value,cur.a);
   if(r==='empty'){feedback('Type a guess first.','info');return}
   if(r==='right'){ solved(); return }
-  wrongs++; anim('shake');
+  wrongs++; trail.push('x'); anim('shake');
   $('form').classList.add('bad');setTimeout(()=>$('form').classList.remove('bad'),900);
   const extra = scored() ? ' (−10)' : '';
   feedback(r==='close' ? 'Very close. Check the wording.'+extra : 'Not quite. Look again.'+extra,'bad');
   if(scored()) refreshMeta();
+  if(mode==='daily') dailySave();
 };
 $('revealBtn').onclick=()=>{
   if(settled||!cur) return;
   settled=true; lockCard();
   showStamp(cur.a[0].replace(/(^|\s)\S/g,m=>m.toUpperCase()),false);
+  recordResult(cur,0);
   if(mode==='practice'){ PR.streak=0; practiceStats(); }
-  else if(mode==='quiz') quizGiveUp(); else endlessGiveUp();
+  else if(mode==='quiz') quizGiveUp(); else if(mode==='daily') dailyGiveUp(); else endlessGiveUp();
 };
-function lockCard(){setCardEnabled(false);if(cur)setRateFor(cur);$('hintBtn').hidden=true;$('revealBtn').hidden=true;$('nextBtn').hidden=false;$('nextBtn').className='btn go';$('nextBtn').textContent='Next';$('nextBtn').focus()}
+/* Once a puzzle is over (solved or given up), what the answer means, folded away until opened. */
+function showMeaning(answer,text){
+  const d=$('meaning');d.open=false;d.hidden=!text;if(!text) return;
+  $('meaningSum').textContent=`What “${String(answer).replace(/(^|\s)\S/g,m=>m.toUpperCase())}” means`;
+  $('meaningText').textContent=text;
+}
+function lockCard(){setCardEnabled(false);if(cur){setRateFor(cur);showMeaning(cur.a[0],cur.m)}$('hintBtn').hidden=true;$('revealBtn').hidden=true;$('nextBtn').hidden=false;$('nextBtn').className='btn go';$('nextBtn').textContent=mode==='daily'?'Share result':'Next';$('nextBtn').title='';$('nextBtn').focus()}
 function showStamp(text,ok){const st=$('stamp');st.textContent=text;st.className='stamp'+(ok?'':' neutral');st.hidden=false;$('board').classList.add(ok?'solved':'revealed')}
 function hideStamp(){$('stamp').hidden=true;$('board').classList.remove('solved','revealed')}
 function solved(){
   settled=true; lockCard(); anim('win');
   showStamp(cur.a[0].replace(/(^|\s)\S/g,m=>m.toUpperCase()),true);
+  const first=markSolved(cur);
+  recordResult(cur,1);
   if(mode==='practice'){
     PR.solved++;PR.streak++;PR.best=Math.max(PR.best,PR.streak);
-    store('rb_pbest',PR.best);practiceStats();
+    store('rb_pbest',PR.best);practiceStats();renderChips();
     feedback(PR.streak>1?`Correct. ${PR.streak} in a row.`:'Correct.','ok');
-  } else if(mode==='quiz') quizSolved(); else endlessSolved();
+    const t=tierOf(cur.d);
+    if(first&&ALL().filter(p=>inTier(p,t)).every(p=>SOLVED.has(p.id))) toast(`You’ve solved every ${TIER[t][0]} puzzle!`);
+  } else if(mode==='quiz') quizSolved(); else if(mode==='daily') dailySolved(); else endlessSolved();
 }
-$('nextBtn').onclick=()=> mode==='practice'?practiceNext():mode==='quiz'?quizNext():endlessNext();
+$('nextBtn').onclick=()=>{
+  if(mode==='practice'){practiceAbandon();practiceNext()}
+  else if(mode==='quiz') quizNext(); else if(mode==='daily') dailyShare(); else endlessNext();
+};
 function roundValue(base){return Math.max(Math.round(base*(1-.25*hintsUsed))-10*wrongs, Math.round(base*.2))}
 function refreshMeta(){ if(cur&&!settled) $('cMeta').textContent=`worth ${roundValue(mode==='quiz'?QBASE[cur.d]:ebase())}` }
 
 /* ================= practice ================= */
 const PR={t:1,decks:{},idx:{},solved:0,streak:0,best:+(store('rb_pbest')||0)};
 const inTier=(p,t)=>tierOf(p.d)===t;
+/* Puzzles solved in any mode (not Live) are remembered on this device, so Practice deals new ones first. */
+const SOLVED=new Set((()=>{try{const a=JSON.parse(store('rb_solved')||'[]');return Array.isArray(a)?a:[]}catch(e){return []}})());
+function markSolved(p){
+  if(!p||!p.id||SOLVED.has(p.id)) return false;
+  SOLVED.add(p.id);store('rb_solved',JSON.stringify([...SOLVED]));
+  return true;
+}
 function renderChips(){
-  const counts=[1,2,3,4].map(t=>ALL().filter(p=>inTier(p,t)).length);
-  const tiers=STANDALONE&&!counts[3]?[1,2,3]:[1,2,3,4];
+  const inT=[1,2,3,4].map(t=>ALL().filter(p=>inTier(p,t)));
+  const tiers=STANDALONE&&!inT[3].length?[1,2,3]:[1,2,3,4];
   if(!tiers.includes(PR.t)) PR.t=3;
-  $('chips').innerHTML=tiers.map(t=>`<button class="chip" data-t="${t}" aria-pressed="${PR.t===t}"><span class="dot" style="background:${TIER[t][1]}"></span>${TIER[t][0]} <small>${counts[t-1]}</small></button>`).join('');
-  $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{PR.t=+c.dataset.t;renderChips();PR.decks[PR.t]=null;practiceNext()});
+  $('chips').innerHTML=tiers.map(t=>{const all=inT[t-1],done=all.filter(p=>SOLVED.has(p.id)).length;
+    return `<button class="chip" data-t="${t}" aria-pressed="${PR.t===t}" aria-label="${TIER[t][0]}, ${done} of ${all.length} solved"><span class="dot" style="background:${TIER[t][1]}"></span>${TIER[t][0]} <small>${done}/${all.length}</small></button>`}).join('');
+  $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{practiceAbandon();PR.t=+c.dataset.t;renderChips();PR.decks[PR.t]=null;practiceNext()});
   $('pGen').textContent=`Write 6 new ${TIER[PR.t][0].toLowerCase()} ones`;
+}
+/* Moving on from an unsolved puzzle (Skip, or switching difficulty) ends the streak, same as Reveal. */
+function practiceAbandon(){
+  if(!cur||settled) return;
+  recordResult(cur,-1);
+  if(PR.streak){PR.streak=0;practiceStats();toast('Streak reset')}
 }
 function practiceNext(){
   const t=PR.t;
@@ -1489,19 +915,21 @@ function practiceNext(){
   }
   let deck=PR.decks[t];
   if(!deck||PR.idx[t]>=deck.length){
+    // unsolved first, then ones solved before; within each, ones not in the last deck first
     const seen=new Set(deck?deck.map(p=>p.id):[]);
-    PR.decks[t]=deck=shuffle(pool.filter(p=>!seen.has(p.id))).concat(shuffle(pool.filter(p=>seen.has(p.id))));
+    const rank=p=>(SOLVED.has(p.id)?2:0)+(seen.has(p.id)?1:0);
+    PR.decks[t]=deck=[0,1,2,3].flatMap(r=>shuffle(pool.filter(p=>rank(p)===r)));
     PR.idx[t]=0;
   }
   const p=deck[PR.idx[t]++];
-  showPuzzle(p,`${PR.idx[t]} of ${deck.length}`);
+  showPuzzle(p,`${PR.idx[t]} of ${deck.length}${SOLVED.has(p.id)?' · solved before':''}`);
 }
 async function practiceGen(){
   const t=PR.t;
   const level = t<4 ? t : Math.max(4,...LIB.filter(p=>p.d>=4).map(p=>p.d+1));
   const before=ALL().filter(p=>inTier(p,t)).map(p=>p.id);
   const wasEmpty=!before.length;
-  if(wasEmpty) showBoardMessage(`<span class="spin"></span><p>Claude is writing new puzzles. This can take up to a minute.</p>`);
+  if(wasEmpty) showBoardMessage(`<span class="spin"></span><p>Claude is writing new puzzles, then solving them blind to check they’re fair. This can take a minute or two.</p>`);
   const n=await generate(level);
   if(PR.t!==t||mode!=='practice') return;
   if(n){
@@ -1525,6 +953,98 @@ function genError(){
 }
 $('pGen').onclick=practiceGen;
 function practiceStats(){$('pSolved').textContent=PR.solved;$('pStreak').textContent=PR.streak;$('pBest').textContent=PR.best}
+
+/* ================= daily ================= */
+/* One puzzle a day, the same for everyone on the same version of the bank: the date picks it,
+   and the weekday sets the difficulty (Monday easiest, Sunday hardest). One go each; hints are
+   allowed and show up in the shared result. Progress is saved as you go, so reloading can't reset it. */
+const DAILY_START=Date.UTC(2026,9,19); // Daily #1
+const DAILY_LEVELS=[[6,8],[1,1],[2,2],[2,3],[3,3],[3,4],[4,5]]; // difficulty range by getDay(), Sunday first
+const dayKey=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const keyDate=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)};
+const dayNum=k=>{const d=keyDate(k);return Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-DAILY_START)/864e5)+1};
+function hashStr(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function dailyPuzzle(k){
+  const [lo,hi]=DAILY_LEVELS[keyDate(k).getDay()];
+  const pool=B.filter(p=>p.d>=lo&&p.d<=hi).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+  return pool[hashStr('rebus-daily-'+k)%pool.length];
+}
+// rb_daily: {"2026-10-19": {t:"xho", done:true, ok:true}}; t is the trail, plus o = solved, r = gave up
+let DAILY={};try{const d=JSON.parse(store('rb_daily')||'{}');if(d&&typeof d==='object')DAILY=d}catch(e){}
+const D={key:'',p:null,tick:null};
+function dailySave(done,ok){
+  const prev=DAILY[D.key]||{};
+  DAILY[D.key]={t:trail.join(''),done:!!(done||prev.done),ok:!!(ok||prev.ok)};
+  const keep=Object.keys(DAILY).sort().slice(-400);
+  DAILY=Object.fromEntries(keep.map(k=>[k,DAILY[k]]));
+  store('rb_daily',JSON.stringify(DAILY));
+}
+function dailyStreak(){ // solved days in a row, up to today (or yesterday, if today isn't played yet)
+  const d=new Date();let n=0;
+  if(!(DAILY[dayKey(d)]||{}).done) d.setDate(d.getDate()-1);
+  while((DAILY[dayKey(d)]||{}).ok){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function dailyStart(){
+  D.key=dayKey();D.p=dailyPuzzle(D.key);
+  showPuzzle(D.p,keyDate(D.key).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'}));
+  const e=DAILY[D.key];
+  if(e){ // pick up where you left off
+    trail=[...String(e.t||'')].filter(c=>c==='h'||c==='x');
+    for(let i=0;i<trail.filter(c=>c==='h').length&&i<2;i++) addHint();
+    wrongs=trail.filter(c=>c==='x').length;
+    if(e.done){
+      settled=true;lockCard();
+      showStamp(D.p.a[0].replace(/(^|\s)\S/g,m=>m.toUpperCase()),e.ok);
+      feedback(e.ok?'You solved today’s puzzle.':'Today’s puzzle got away. Try again tomorrow.',e.ok?'ok':'info');
+    }
+  }
+  dailyRender();
+}
+function dailySolved(){
+  trail.push('o');dailySave(true,true);
+  const st=dailyStreak();
+  feedback(st>1?`Solved. ${st} days in a row.`:'Solved. Share your result, or come back tomorrow.','ok');
+  dailyRender();
+}
+function dailyGiveUp(){
+  trail.push('r');dailySave(true,false);
+  feedback('Better luck tomorrow. You can still share your result.','info');
+  dailyRender();
+}
+function dailyShareText(){
+  const e=DAILY[D.key]||{t:''};
+  const icons={h:'💡',x:'🟥',o:'🟩',r:'⬛'};
+  const hints=[...e.t].filter(c=>c==='h').length, st=dailyStreak();
+  const how=e.ok?(hints?`Solved with ${hints} hint${hints>1?'s':''}`:'Solved, no hints'):'Stumped';
+  const url=STANDALONE&&/^https?:$/.test(location.protocol)?location.origin+location.pathname:'';
+  return [`Rebus Club Daily #${dayNum(D.key)} · ${tierName(D.p.d)}`,[...e.t].map(c=>icons[c]||'').join(''),how+(st>1?` · 🔥 ${st}`:''),url].filter(Boolean).join('\n');
+}
+async function dailyShare(){
+  const text=dailyShareText();
+  if(navigator.share&&!fine()){try{await navigator.share({text});return}catch(e){if(e&&e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(text);toast('Result copied. Paste it anywhere.')}
+  catch(e){feedback(text,'info')}
+}
+function dailyRender(){
+  $('dTitle').innerHTML=`<span class="dot" style="background:${TIER[tierOf(D.p.d)][1]}"></span>Daily #${dayNum(D.key)}`;
+  $('dStreak').textContent=dailyStreak();
+  $('dPlayed').textContent=Object.values(DAILY).filter(e=>e&&e.done).length;
+  markDailyTab();dailyClock();
+}
+function markDailyTab(){$('mDaily').classList.toggle('new',!(DAILY[dayKey()]||{}).done)}
+function dailyClock(){
+  clearInterval(D.tick);D.tick=null;
+  const e=DAILY[D.key];
+  if(!e||!e.done){$('dStatus').textContent='One puzzle a day, the same for everyone. Hints are fine; they show in your result.';return}
+  const tick=()=>{
+    if(mode!=='daily'){clearInterval(D.tick);return}
+    if(dayKey()!==D.key){clearInterval(D.tick);dailyStart();return} // midnight passed: on to the next one
+    const now=new Date(),next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),m=Math.ceil((next-now)/6e4);
+    $('dStatus').textContent=`Next daily puzzle in ${Math.floor(m/60)}h ${m%60}m.`;
+  };
+  tick();D.tick=setInterval(tick,30000);
+}
 
 /* ================= quiz ================= */
 const Q={seq:[],i:0,score:0,lives:3,res:[],playing:false};
@@ -1581,10 +1101,13 @@ const ebase=()=>100+50*(E.level-1);
 function poolFor(level){
   const all=ALL().filter(p=>!E.seen.has(p.id));
   if(level<=3) return all.filter(p=>p.d===level);
-  return all.filter(p=>p.d>=4&&p.d<=level+1).sort((a,b)=>Math.abs(a.d-level)-Math.abs(b.d-level));
+  const pool=all.filter(p=>p.d>=4&&p.d<=level+1).sort((a,b)=>Math.abs(a.d-level)-Math.abs(b.d-level));
+  // nothing left at this expert level and nothing generated: fall back to any hard puzzle
+  if(!pool.length&&E.fallbackHard) return all.filter(p=>p.d>=3);
+  return pool;
 }
 function endlessStart(){
-  Object.assign(E,{level:1,inLevel:0,score:0,lives:3,solved:0,seen:new Set(),playing:true,recycled:false,note:''});
+  Object.assign(E,{level:1,inLevel:0,score:0,lives:3,solved:0,seen:new Set(),playing:true,recycled:false,note:'',fallbackHard:false});
   show({endlessHud:1,card:1});
   endlessShow();
 }
@@ -1592,7 +1115,7 @@ async function endlessShow(){
   endlessRender();
   let pool=poolFor(E.level);
   if(!pool.length&&sample){
-    showBoardMessage(`<span class="spin"></span><p>Claude is writing level ${E.level} puzzles for you. The first batch can take up to a minute.</p>`);
+    showBoardMessage(`<span class="spin"></span><p>Claude is writing level ${E.level} puzzles for you, then solving them blind to check they’re fair. The first batch can take a minute or two.</p>`);
     const other=!!genState.busy&&genState.level!==E.level; // a background batch for another level is running
     await generate(E.level);
     if(mode!=='endless'||!E.playing) return;
@@ -1619,8 +1142,6 @@ function recycle(){ // let the hardest available puzzles come round again
   if(E.level>=4&&!poolFor(E.level).length){E.fallbackHard=true}
 }
 function recycleAll(){E.seen=new Set(cur?[cur.id]:[])}
-const _poolFor=poolFor;
-poolFor=function(level){const p=_poolFor(level);if(!p.length&&level>=4&&E.fallbackHard)return ALL().filter(x=>!E.seen.has(x.id)&&x.d>=3);return p};
 function maybePrefetch(){
   if(!sample||genState.busy) return;
   const nextLevel=E.level+1;
@@ -1678,7 +1199,8 @@ if(window.claude&&typeof window.claude.use==='function'){
   window.claude.use('room').then(r=>{ROOM=r||null;roomChecked=true;if(mode==='live'&&!L.room)liveLobby()}).catch(()=>{roomChecked=true});
 } else roomChecked=true;
 const CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ';
-const L={room:null,role:null,code:'',name:'',my:null,state:null,seq:[],cur:null,seenK:{},k:0,shown:0,shownClue:false,host:null,lastHP:null,timer:null,waitT:null,unsub:null};
+const L={room:null,role:null,code:'',name:'',my:null,state:null,seq:[],cur:null,seenK:{},k:0,shown:0,shownClue:false,host:null,lastHP:null,timer:null,waitT:null,unsub:null,roundT:null,tick:null,roundAt:0};
+const ROUND_SECS=90; // a round nobody solves ends on its own after this long
 const cleanName=s=>String(s||'').replace(/[\u0000-\u001f\u200b-\u200f\u2028-\u202e\u2060-\u206f]/g,'').trim().slice(0,16)||'Player';
 function liveLobby(){
   show({liveLobby:1});
@@ -1735,8 +1257,9 @@ function judgeLive(peer,text,k){
   const r=judge(text,L.cur.a);
   if(r==='empty') return;
   if(r==='right'){
+    clearTimeout(L.roundT);
     st.scores[peer].s++;
-    st.phase='reveal';st.win={p:peer,n:st.scores[peer].n};st.ans=L.cur.a[0];
+    st.phase='reveal';st.win={p:peer,n:st.scores[peer].n};st.ans=L.cur.a[0];st.m=L.cur.m||null;
     scheduleNext();
   } else st.fb[peer]={k,v:r};
 }
@@ -1749,11 +1272,18 @@ function startGame(){
 }
 function nextRound(){
   const st=L.state;
+  clearTimeout(L.roundT);
   if(st.round>=st.total){st.phase='over';st.win=null;st.ans=null;pushState();return}
   const p=L.seq[st.round];L.cur=p;
-  st.round++;st.phase='play';st.win=null;st.ans=null;st.clue=null;st.fb={};
+  st.round++;st.phase='play';st.win=null;st.ans=null;st.m=null;st.clue=null;st.fb={};st.lim=ROUND_SECS;
   st.pz=p.gen?{l:p.layout,d:p.d,g:1}:{b:p.id,d:p.d};
+  const round=st.round;
+  L.roundT=setTimeout(()=>{if(L.role==='host'&&st===L.state&&st.phase==='play'&&st.round===round)revealRound()},ROUND_SECS*1000);
   pushState();
+}
+function revealRound(){ // end the round with no winner and show the answer
+  const st=L.state;clearTimeout(L.roundT);
+  st.phase='reveal';st.win=null;st.ans=L.cur.a[0];st.m=L.cur.m||null;pushState();scheduleNext();
 }
 function pushState(){
   const st=L.state;
@@ -1766,8 +1296,8 @@ function pushState(){
 }
 $('lStart').onclick=()=>{if(L.role==='host')startGame()};
 $('lClue').onclick=()=>{if(L.role==='host'&&L.state.phase==='play'&&L.cur){L.state.clue=L.cur.h;pushState()}};
-$('lSkip').onclick=()=>{if(L.role==='host'&&L.state.phase==='play'&&L.cur){const st=L.state;st.phase='reveal';st.win=null;st.ans=L.cur.a[0];pushState();scheduleNext()}};
-$('lEnd').onclick=()=>{if(L.role==='host'){clearTimeout(L.timer);L.state.phase='over';pushState()}};
+$('lSkip').onclick=()=>{if(L.role==='host'&&L.state.phase==='play'&&L.cur)revealRound()};
+$('lEnd').onclick=()=>{if(L.role==='host'){clearTimeout(L.timer);clearTimeout(L.roundT);L.state.phase='over';pushState()}};
 /* ---- player ---- */
 async function liveJoin(){
   if(!ROOM) return;
@@ -1780,7 +1310,7 @@ async function liveJoin(){
   L.room.presence({role:'player',name:L.name}).catch(()=>{});
   L.unsub=L.room.onPeers(playerPeers,()=>liveLost());
   show({liveHud:1,liveBoard:1});
-  $('lCodeShow').textContent=code;$('lHostCtl').hidden=true;$('lRoundInfo').textContent='';
+  $('lCodeShow').textContent=code;$('lHostCtl').hidden=true;$('lRoundInfo').textContent='';$('lClock').textContent='';
   $('lStatus').className='livestatus';$('lStatus').textContent='Looking for the host…';$('lScores').innerHTML='';
   clearTimeout(L.waitT);
   L.waitT=setTimeout(()=>{if(L.role==='player'&&!L.host)$('lStatus').textContent=`No game is running with code ${code} yet. Check the code, or wait here for the host.`},5000);
@@ -1805,7 +1335,7 @@ function liveSubmit(){
 /* ---- shared rendering ---- */
 function livePuzzle(pz){
   if(!pz) return null;
-  if(pz.b){const p=B.find(x=>x.id===pz.b);return p?{d:p.d,r:p.r}:null}
+  if(pz.b){const p=B.find(x=>x.id===pz.b);return p?{d:p.d,r:p.r,alt:p.alt}:null}
   try{return {d:+pz.d||4,r:R(pz.l),gen:true}}catch(e){return null}
 }
 function renderLive(st){
@@ -1820,6 +1350,8 @@ function renderLive(st){
   $('lClue').disabled=!!st.clue;
   $('lEnd').hidden=!(host&&(st.phase==='play'||st.phase==='reveal'));
   $('lRoundInfo').innerHTML=st.round&&st.phase!=='lobby'?`Round <b>${st.round}</b>/${esc(st.total)}`:'';
+  if(st.phase==='play'&&st.round!==L.shown) L.roundAt=Date.now();
+  liveClock();
   // scoreboard
   const rows=Object.entries(st.scores||{}).map(([peer,v])=>({peer,n:cleanName(v&&v.n),s:+(v&&v.s)||0,h:v&&v.h,away:v&&v.away}))
     .sort((a,b)=>b.s-a.s||a.n.localeCompare(b.n));
@@ -1845,11 +1377,11 @@ function renderLive(st){
     const p=livePuzzle(st.pz);
     $('cTier').innerHTML=p?tierLabel({d:p.d,gen:p.gen}):'';
     $('cMeta').textContent=`Round ${st.round}`;
-    $('pz').innerHTML=p?p.r:'<div class="boardmsg"><p>This puzzle couldn’t be shown. Wait for the next round.</p></div>';
+    $('pz').innerHTML=p?p.r:'<div class="boardmsg"><p>This puzzle couldn’t be shown. Wait for the next round.</p></div>';setBoardLabel(p);
     $('hints').innerHTML='';feedback('','info');$('guess').value='';
     $('board').classList.remove('shake','win');
     $('card').style.setProperty('--tc',p?TIER[tierOf(p.d)][1]:'var(--line)');
-    hideStamp();setRateKey(null);
+    hideStamp();setRateKey(null);showMeaning();
   }
   if(st.clue&&!L.shownClue){L.shownClue=true;$('hints').insertAdjacentHTML('beforeend',`<div class="hint"><span class="lab">Clue</span>${esc(st.clue)}</div>`)}
   if(st.phase==='play'){
@@ -1861,18 +1393,32 @@ function renderLive(st){
   } else if(st.phase==='reveal'){
     $('guess').disabled=true;$('checkBtn').disabled=true;
     if(st.ans) setRateKey(pkey(st.ans,!!(st.pz&&st.pz.g)));
-    if($('stamp').hidden) showStamp(String(st.ans||'').replace(/(^|\s)\S/g,m=>m.toUpperCase()),!!(st.win&&st.win.p===L.my));
+    if($('stamp').hidden){ // first render of this reveal (later ones mustn't fold the meaning back up)
+      showStamp(String(st.ans||'').replace(/(^|\s)\S/g,m=>m.toUpperCase()),!!(st.win&&st.win.p===L.my));
+      showMeaning(st.ans||'',typeof st.m==='string'?st.m.slice(0,200):'');
+    }
     if(st.win&&st.win.p===L.my){status.className='livestatus ok';status.textContent='You got it first. +1 point';feedback('','info');anim('win')}
     else if(st.win){status.textContent=`${cleanName(st.win.n)} got it first.`;feedback('','info')}
     else{status.textContent='Nobody got that one.';feedback('','info')}
     status.textContent+=st.round<st.total?' Next round in a few seconds.':' That was the last round.';
   }
 }
+/* Countdown shown to everyone. Each device counts from when it saw the round start,
+   so it can be a second or so off the host's own timer, which is the one that ends the round. */
+function liveClock(){
+  const st=L.state, el=$('lClock');
+  const on=!!(L.room&&st&&st.phase==='play'&&st.lim);
+  if(!on){el.textContent='';clearInterval(L.tick);L.tick=null;return}
+  const left=Math.max(0,Math.ceil(+st.lim-(Date.now()-L.roundAt)/1000));
+  el.innerHTML=`Time <b>${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}</b>`;
+  if(!L.tick) L.tick=setInterval(liveClock,1000);
+}
 function liveLost(){ if(mode==='live'){lErr('The connection to the game was lost.');liveLeave(true);liveLobby()} }
 function liveLeave(silent){
-  clearTimeout(L.timer);clearTimeout(L.waitT);
+  clearTimeout(L.timer);clearTimeout(L.waitT);clearTimeout(L.roundT);
   try{L.unsub&&L.unsub()}catch(e){}
   const r=L.room;L.room=null;L.unsub=null;L.role=null;L.state=null;L.my=null;L.host=null;L.lastHP=null;
+  liveClock();
   if(r) r.leave().catch(()=>{});
   if(!silent) liveLobby();
 }
@@ -1880,6 +1426,41 @@ $('lHost').onclick=liveHost;$('lJoin').onclick=liveJoin;$('lLeave').onclick=()=>
 $('lCode').addEventListener('keydown',e=>{if(e.key==='Enter')liveJoin()});
 $('lCopy').onclick=()=>{const t=L.code;try{navigator.clipboard.writeText(t).then(()=>toast('Code copied'),()=>toast('Code: '+t))}catch(e){toast('Code: '+t)}};
 
+
+/* ================= solve stats ================= */
+/* Each player's first go at each puzzle, as [outcome, hints, wrong guesses]: outcome 1 solved,
+   0 gave up, -1 skipped. Kept on the device, and in stats/<their id> next to the votes when
+   signed in, so tiers can be tuned from real results. Live games aren't counted. */
+const STATS={mine:{},tally:{},timer:null};
+try{const s=JSON.parse(store('rb_stats')||'{}');if(s&&typeof s==='object')STATS.mine=s}catch(e){}
+function recordResult(p,outcome){
+  if(!p||mode==='live') return;
+  const k=pkey(p.a[0],p.gen); if(k in STATS.mine) return;
+  STATS.mine[k]=[outcome,hintsUsed,wrongs];
+  store('rb_stats',JSON.stringify(STATS.mine));
+  clearTimeout(STATS.timer);STATS.timer=setTimeout(saveStats,1500);
+}
+async function saveStats(){
+  if(!RATE.db||!RATE.uid) return;
+  try{await RATE.db.doc('stats/'+RATE.uid).set({v:STATS.mine,t:Date.now()})}catch(e){}
+}
+function subscribeStats(db,uid){
+  try{
+    db.collection('stats').onSnapshot(snap=>{
+      const tally={};let saved=null;
+      for(const d of snap.docs){
+        const v=(d.data()||{}).v; if(!v||typeof v!=='object') continue;
+        if(d.id===uid){saved=v;continue}
+        for(const k in v){const r=v[k];if(!Array.isArray(r))continue;const t=tally[k]||(tally[k]={n:0,ok:0});t.n++;if(r[0]===1)t.ok++}
+      }
+      // take in results from your other devices, and send up any the server doesn't have yet
+      if(saved) for(const k in saved) if(!(k in STATS.mine)) STATS.mine[k]=saved[k];
+      if(Object.keys(STATS.mine).some(k=>!saved||!(k in saved))){clearTimeout(STATS.timer);STATS.timer=setTimeout(saveStats,1500)}
+      store('rb_stats',JSON.stringify(STATS.mine));
+      STATS.tally=tally;renderRate();
+    },()=>{});
+  }catch(e){}
+}
 
 /* ================= puzzle ratings ================= */
 /* Each signed-in person keeps one record, votes/<their id>, holding {v:{puzzleKey: 1 | -1}}.
@@ -1904,6 +1485,7 @@ if(window.claude&&typeof window.claude.use==='function'){
         RATE.tally=tally;RATE.loaded=true;renderRate();
       },()=>{RATE.local=true;renderRate()});
     }catch(e){RATE.local=true}
+    subscribeStats(db,uid);
   }).catch(()=>{});
 }
 function setRateFor(p){ RATE.key=p?pkey(p.a[0],p.gen):null; renderRate() }
@@ -1915,7 +1497,10 @@ function renderRate(){
   $('tUp').setAttribute('aria-pressed',mine===1);$('tDown').setAttribute('aria-pressed',mine===-1);
   $('tUpN').textContent=showCounts?String(t.u+(mine===1?1:0)):'';
   $('tDownN').textContent=showCounts?String(t.d+(mine===-1?1:0)):'';
-  $('rateNote').textContent=RATE.local||!RATE.canWrite?'Your vote is saved on this device only.':'';
+  const s=STATS.tally[k], notes=[];
+  if(s&&s.n>=5) notes.push(`${Math.round(100*s.ok/s.n)}% of ${s.n} other players solved this.`);
+  if(RATE.local||!RATE.canWrite) notes.push('Your vote is saved on this device only.');
+  $('rateNote').textContent=notes.join(' ');
 }
 function vote(val,btn){
   const k=RATE.key; if(!k) return;
@@ -1943,7 +1528,6 @@ $('tDown').onclick=e=>vote(-1,e.currentTarget);
 /* ================= standalone app ================= */
 if(STANDALONE){
   $('mLive').hidden=true;
-  document.querySelector('.seg').style.gridTemplateColumns='repeat(3,1fr)';
   $('eIntroText').textContent='Endless never runs out. Every five puzzles you solve, you go up a level, win back a life, and each puzzle is worth more. Levels 1–3 build up through easy and medium puzzles; from level 4 on come the Expert puzzles, which combine two or three tricks and get harder every level.';
   $('eL4Text').textContent='Expert puzzles, harder each level';
   $('eLibWrap').hidden=true;
@@ -1957,22 +1541,41 @@ if(STANDALONE){
 }
 
 /* ================= modes ================= */
-const SECTIONS=['practiceBar','quizIntro','endlessIntro','quizHud','endlessHud','card','endPanel','liveLobby','liveHud','liveBoard'];
+const SECTIONS=['practiceBar','dailyHud','quizIntro','endlessIntro','quizHud','endlessHud','card','endPanel','liveLobby','liveHud','liveBoard'];
 function show(on){SECTIONS.forEach(id=>$(id).hidden=!on[id])}
 function setMode(m){
   if(mode==='live'&&m!=='live') liveLeave(true);
+  if(mode==='practice'&&m!=='practice') practiceAbandon();
   mode=m;
-  ['Practice','Quiz','Endless','Live'].forEach(n=>$('m'+n).setAttribute('aria-pressed',m===n.toLowerCase()));
+  ['Practice','Daily','Quiz','Endless','Live'].forEach(n=>$('m'+n).setAttribute('aria-pressed',m===n.toLowerCase()));
   Q.playing=false;E.playing=false;
   if(m==='practice'){show({practiceBar:1,card:1});renderChips();practiceNext()}
+  else if(m==='daily'){show({dailyHud:1,card:1});dailyStart()}
   else if(m==='quiz'){show({quizIntro:1});$('qBestIntro').textContent=store('rb_qbest')||'—'}
   else if(m==='live'){liveLobby()}
   else{show({endlessIntro:1});const b=JSON.parse(store('rb_ebest')||'null');$('eBestIntro').textContent=b?`${b.score} (level ${b.level})`:'—'}
   refreshGenUI();
 }
-$('mPractice').onclick=()=>setMode('practice');$('mQuiz').onclick=()=>setMode('quiz');$('mEndless').onclick=()=>setMode('endless');$('mLive').onclick=()=>setMode('live');
+$('mPractice').onclick=()=>setMode('practice');$('mDaily').onclick=()=>setMode('daily');$('mQuiz').onclick=()=>setMode('quiz');$('mEndless').onclick=()=>setMode('endless');$('mLive').onclick=()=>setMode('live');
 
-practiceStats();setMode('practice');
+/* ================= keyboard ================= */
+/* Enter checks, then moves on once the puzzle is done. ? anywhere (answers never contain one),
+   or H outside the answer box, gives a hint. Esc skips in Practice. */
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing||mode==='live'||$('card').hidden||!cur) return;
+  const t=e.target, inGuess=t===$('guess');
+  if(!inGuess&&/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+  if(e.key==='?'||(!inGuess&&(e.key==='h'||e.key==='H'))){
+    e.preventDefault();
+    if(!settled&&!$('hintBtn').disabled) $('hintBtn').click();
+  } else if(e.key==='Escape'&&mode==='practice'&&!settled){
+    e.preventDefault();$('nextBtn').click();
+  } else if(e.key==='Enter'&&settled&&mode!=='daily'&&!$('nextBtn').hidden&&!/^(BUTTON|A|SUMMARY)$/.test(t.tagName)){
+    e.preventDefault();$('nextBtn').click();
+  }
+});
+
+practiceStats();markDailyTab();setMode('practice');
 </script>
 </body>
 </html>

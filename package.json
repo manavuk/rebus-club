@@ -1,0 +1,8 @@
+{
+  "name": "rebus-club",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check-puzzles.mjs",
+    "stamp": "node scripts/stamp-sw.mjs"
+  }
+}
