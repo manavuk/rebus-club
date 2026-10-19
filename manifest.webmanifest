@@ -1,0 +1,37 @@
+{
+  "name": "Rebus Club",
+  "short_name": "Rebus Club",
+  "description": "Rebus riddles: practice, a 15-round quiz, and an endless climb.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E6EDEA",
+  "theme_color": "#E6EDEA",
+  "categories": [
+    "games",
+    "education",
+    "entertainment"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
