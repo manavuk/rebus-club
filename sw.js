@@ -1,7 +1,7 @@
 // Rebus Club offline support.
 // The app itself is cached on install; the page is fetched fresh when online
 // (so updates arrive) and served from the cache when offline.
-const CACHE = 'rebus-club-81a7411685';
+const CACHE = 'rebus-club-ef4c04086f';
 const APP = [
   './',
   'index.html',

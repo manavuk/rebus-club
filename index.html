@@ -1708,20 +1708,74 @@
       flex-wrap: wrap
     }
 
+    /* Logo: REBUS on five tumbling letter tiles, one per difficulty colour plus teal, with a CLUB
+       sticker stuck on the end. The real name is in .vh for screen readers; the tiles are decoration. */
     .logo {
       font-family: var(--f-display);
       font-weight: 800;
       font-size: 1.7rem;
       line-height: 1;
       margin: 0;
-      letter-spacing: -.02em
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 2px 6px
     }
 
-    .logo span {
-      background: var(--accent);
-      color: var(--accent-ink);
-      padding: 0 .16em;
-      border-radius: 5px
+    .vh {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap
+    }
+
+    .tiles {
+      display: inline-flex;
+      gap: .1em
+    }
+
+    .tiles i {
+      --tile: var(--accent);
+      display: inline-grid;
+      place-items: center;
+      width: 1.12em;
+      height: 1.18em;
+      font: normal var(--tile-w, 400) .78em/1 var(--f-tile);
+      color: var(--surface);
+      background: var(--tile);
+      border-radius: .2em;
+      box-shadow: inset 0 -.12em 0 rgba(0, 0, 0, .24);
+      padding-bottom: .1em;
+      transition: transform .25s cubic-bezier(.3, 1.6, .5, 1)
+    }
+
+    .tiles i:nth-child(1) { --tile: var(--t1); transform: rotate(-7deg) translateY(.04em) }
+    .tiles i:nth-child(2) { --tile: var(--t2); transform: rotate(5deg) translateY(-.06em) }
+    .tiles i:nth-child(3) { --tile: var(--t3); transform: rotate(-3deg) translateY(.06em) }
+    .tiles i:nth-child(4) { --tile: var(--t4); transform: rotate(7deg) translateY(-.03em) }
+    .tiles i:nth-child(5) { --tile: var(--accent); transform: rotate(-5deg) translateY(.05em) }
+
+    .logo:hover .tiles i { transform: rotate(0) translateY(-.08em) }
+
+    .club {
+      position: relative;
+      z-index: 1;
+      margin-left: -.35em;
+      align-self: flex-start;
+      padding: .14em .36em .12em;
+      font: 800 .36em/1 var(--f-body);
+      letter-spacing: .14em;
+      background: var(--ink);
+      color: var(--bg);
+      border-radius: .3em;
+      transform: rotate(9deg) translateY(-.3em);
+      box-shadow: 0 .1em .3em -.1em rgba(0, 0, 0, .4)
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tiles i { transition: none }
+      .logo:hover .tiles i { transform: none }
     }
 
     .tagline {
@@ -2297,11 +2351,22 @@
       border-bottom: 3px double var(--ink)
     }
 
-    [data-skin="newspaper"] .logo span {
-      background: none;
-      color: var(--accent);
-      padding: 0;
-      font-style: italic
+    /* newspaper: ink-printed tiles on paper, a red italic sticker */
+    [data-skin="newspaper"] .tiles i {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1.5px solid var(--ink);
+      border-radius: .08em;
+      box-shadow: none
+    }
+
+    [data-skin="newspaper"] .club {
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-family: var(--f-display);
+      font-style: italic;
+      letter-spacing: .04em;
+      border-radius: 0
     }
 
     [data-skin="newspaper"] .seg {
@@ -2372,11 +2437,18 @@
       border-bottom: 2.5px solid var(--ink)
     }
 
-    [data-skin="bold"] .logo span {
-      display: inline-block;
-      transform: rotate(-3deg);
+    /* bold: outlined tiles with hard shadows */
+    [data-skin="bold"] .tiles i {
+      color: var(--ink);
       border: 2.5px solid var(--ink);
-      box-shadow: 3px 3px 0 var(--ink)
+      box-shadow: 2px 2px 0 var(--ink)
+    }
+
+    [data-skin="bold"] .club {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink)
     }
 
     [data-skin="bold"] :is(.card, .panel, .tips, #quizHud, #endlessHud, #liveHud, #dailyHud, .seg, .chip, .stat, .answerbar, .meaning, .iconbtn, .skinmenu) {
@@ -2481,14 +2553,20 @@
       background: var(--bg)
     }
 
-    [data-skin="minimal"] .logo {
-      letter-spacing: -.035em
+    /* minimal: tiles sit straight, one colour; only the sticker is blue */
+    [data-skin="minimal"] .tiles i {
+      --tile: var(--ink);
+      color: var(--bg);
+      transform: none;
+      box-shadow: none;
+      border-radius: .14em
     }
 
-    [data-skin="minimal"] .logo span {
-      background: none;
-      color: var(--accent);
-      padding: 0
+    [data-skin="minimal"] .club {
+      background: var(--accent);
+      color: var(--accent-ink);
+      transform: translateY(-.3em);
+      box-shadow: none
     }
 
     [data-skin="minimal"] .seg {
@@ -2557,16 +2635,22 @@
       color-scheme: dark
     }
 
-    [data-skin="arcade"] .logo {
-      font-size: 1.05rem;
-      letter-spacing: 0;
-      line-height: 1.5
+    /* night arcade: dark tiles outlined in neon, letters glowing in each tile's colour */
+    [data-skin="arcade"] .tiles i {
+      background: #05060F;
+      color: var(--tile);
+      border: 1.5px solid var(--tile);
+      box-shadow: 0 0 10px -2px var(--tile), inset 0 0 8px -3px var(--tile);
+      text-shadow: 0 0 8px var(--tile)
     }
 
-    [data-skin="arcade"] .logo span {
-      background: none;
-      color: var(--accent);
-      text-shadow: 0 0 8px var(--accent), 0 0 18px var(--accent)
+    [data-skin="arcade"] .club {
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-family: var(--f-display);
+      font-size: .3em;
+      letter-spacing: .06em;
+      box-shadow: 0 0 12px var(--accent)
     }
 
     [data-skin="arcade"] :is(.panel h2, .big) {
@@ -2633,7 +2717,7 @@
   <div class="wrap">
     <header class="top">
       <div class="brandrow">
-        <h1 class="logo">Rebus <span>Club</span></h1>
+        <h1 class="logo"><span class="vh">Rebus Club</span><span class="tiles" aria-hidden="true"><i>R</i><i>E</i><i>B</i><i>U</i><i>S</i></span><span class="club" aria-hidden="true">CLUB</span></h1>
         <span class="tagline">Words, pictures and positions hide a phrase.</span>
         <div class="brandtools">
           <button class="btn go sm" id="installBtn" type="button" hidden>Install app</button>
