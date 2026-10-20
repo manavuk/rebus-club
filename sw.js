@@ -1,7 +1,7 @@
 // Rebus Club offline support.
 // The app itself is cached on install; the page is fetched fresh when online
 // (so updates arrive) and served from the cache when offline.
-const CACHE = 'rebus-club-a13a0c1ecf';
+const CACHE = 'rebus-club-ffbf91deaa';
 const APP = [
   './',
   'index.html',
@@ -53,6 +53,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Everything else (icons, fonts, manifest): cache first.
-  event.respondWith(caches.match(req).then(hit => hit || fetch(req)));
+  // Everything else (icons, fonts, manifest): cache first. A theme's fonts aren't in APP, since
+  // most players never pick that theme, so they're saved the first time they're fetched instead.
+  event.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
+    if (res.ok && url.pathname.includes('/fonts/')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+    return res;
+  })));
 });

@@ -16,6 +16,21 @@
   <meta name="apple-mobile-web-app-title" content="Rebus Club">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="fonts/fonts.css">
+  <script>
+    /* The player's theme (picked from the palette button), applied before the page draws so the
+       default look never flashes. Each theme's fonts load only when that theme is in use. */
+    window.SKIN_FONTS = { newspaper: 1, bold: 1, minimal: 1, arcade: 1 }; // themes with their own fonts/skin-<name>.css
+    window.loadSkinFonts = function (s) {
+      if (!SKIN_FONTS[s] || document.getElementById('skinfont-' + s)) return;
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.id = 'skinfont-' + s;
+      l.href = 'fonts/skin-' + s + '.css';
+      document.head.appendChild(l);
+    };
+    (function () {
+      var s = null; try { s = localStorage.getItem('rb_skin') } catch (e) { }
+      if (s && SKIN_FONTS[s]) { document.documentElement.dataset.skin = s; loadSkinFonts(s) }
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -2113,6 +2128,506 @@
         gap: 2px
       }
     }
+
+    /* ===== theme picker ===== */
+    .brandtools {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      align-self: center
+    }
+
+    .skinpick {
+      position: relative
+    }
+
+    .iconbtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer
+    }
+
+    .iconbtn:hover {
+      border-color: var(--ink)
+    }
+
+    .skinmenu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 30;
+      width: min(270px, calc(100vw - 32px));
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .45);
+      padding: 6px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .skinmenu legend {
+      padding: 8px 10px 4px;
+      font: 700 .72rem var(--f-body);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted)
+    }
+
+    .skinopt {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font: 600 .95rem var(--f-body)
+    }
+
+    .skinopt:hover {
+      background: var(--bg)
+    }
+
+    .skinopt input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .skinopt:has(input:checked) {
+      background: var(--bg);
+      box-shadow: inset 0 0 0 1.5px var(--ink)
+    }
+
+    .skinopt:has(input:focus-visible) {
+      outline: 3px solid var(--accent);
+      outline-offset: 1px
+    }
+
+    .skinopt small {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: .78rem
+    }
+
+    .sw {
+      flex: none;
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--a);
+      border: 1px solid rgba(127, 127, 127, .35);
+      overflow: hidden
+    }
+
+    .sw::before {
+      content: "Aa";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      font: 800 .85rem/1 system-ui, sans-serif;
+      color: var(--b)
+    }
+
+    .sw::after {
+      content: "";
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--c)
+    }
+
+    /* ===== themes =====
+       Original is the look above. Each theme below swaps the colour and font tokens, then adjusts a
+       few components. Newspaper and Bold are light only, Night arcade is dark only, and Minimal
+       follows the device's light or dark setting, as Original does. */
+
+    /* fonts with real weights for puzzle words (Archivo Black, Original's, has just one) */
+    :root:is([data-skin="newspaper"], [data-skin="minimal"], [data-skin="arcade"]) :is(.w, .alpha span, .cal, .codechip b, .feet span, .grow, .pattern .word i, .plus, .scores li .pt, .stat b, .xgrid, .xo, #lCode) {
+      font-weight: var(--tile-w)
+    }
+
+    /* single-weight display fonts: don't let the browser fake a bold */
+    :root:is([data-skin="bold"], [data-skin="arcade"]) :is(.logo, .brand h1, .lvl, .reveal, .panel h2, .tiers b, .big, .sub h3, .winner, .stamp) {
+      font-weight: 400
+    }
+
+    /* --- Newspaper: the weekend puzzle page --- */
+    :root[data-skin="newspaper"] {
+      --bg: #F3EEE3;
+      --surface: #FBF8F0;
+      --ink: #1B1A17;
+      --muted: #615C52;
+      --line: #CDC4B2;
+      --grid: #E4DCCB;
+      --accent: #B3261E;
+      --accent-ink: #FFFFFF;
+      --ok: #2E6B3A;
+      --bad: #B3261E;
+      --t1: #2E6B3A;
+      --t2: #9A6400;
+      --t3: #B3261E;
+      --t4: #3A3A8C;
+      --blue: #1F4E8C;
+      --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+      --f-tile: "Libre Franklin", "Franklin Gothic Medium", system-ui, sans-serif;
+      --f-body: "Libre Franklin", system-ui, sans-serif;
+      --tile-w: 800;
+      color-scheme: light
+    }
+
+    [data-skin="newspaper"] header.top {
+      border-bottom: 3px double var(--ink)
+    }
+
+    [data-skin="newspaper"] .logo span {
+      background: none;
+      color: var(--accent);
+      padding: 0;
+      font-style: italic
+    }
+
+    [data-skin="newspaper"] .seg {
+      background: transparent;
+      border: 0;
+      border-block: 1px solid var(--ink);
+      border-radius: 0;
+      padding: 3px 0
+    }
+
+    [data-skin="newspaper"] .seg button {
+      border-radius: 0;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .76rem
+    }
+
+    [data-skin="newspaper"] :is(.card, .panel, .tips, #quizHud, #endlessHud, #liveHud, #dailyHud, .stat, .chip, .answerbar, .meaning, .btn, .iconbtn, .skinmenu) {
+      border-radius: 2px;
+      box-shadow: none
+    }
+
+    [data-skin="newspaper"] :is(.card, .panel, .tips, #quizHud, #endlessHud, #liveHud, #dailyHud) {
+      border: 1px solid var(--ink)
+    }
+
+    [data-skin="newspaper"] .card {
+      border-top: 5px double var(--ink)
+    }
+
+    [data-skin="newspaper"] .board {
+      border-radius: 0;
+      background: var(--surface);
+      border: 1px solid var(--line)
+    }
+
+    [data-skin="newspaper"] .board::before {
+      display: none
+    }
+
+    [data-skin="newspaper"] .stamp {
+      border-radius: 2px;
+      font-style: italic
+    }
+
+    /* --- Bold: colour blocks, thick outlines, hard shadows --- */
+    :root[data-skin="bold"] {
+      --bg: #FFE9A8;
+      --surface: #FFFFFF;
+      --ink: #141414;
+      --muted: #4B4B4B;
+      --line: #141414;
+      --grid: #F2D27A;
+      --accent: #FF5A5F;
+      --accent-ink: #141414;
+      --ok: #12A150;
+      --bad: #E5383B;
+      --t1: #12A150;
+      --t2: #F59E0B;
+      --t3: #E5383B;
+      --t4: #7C4DFF;
+      --blue: #2F6FEB;
+      --f-display: "Lilita One", "Bricolage Grotesque", system-ui, sans-serif;
+      color-scheme: light
+    }
+
+    [data-skin="bold"] header.top {
+      border-bottom: 2.5px solid var(--ink)
+    }
+
+    [data-skin="bold"] .logo span {
+      display: inline-block;
+      transform: rotate(-3deg);
+      border: 2.5px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink)
+    }
+
+    [data-skin="bold"] :is(.card, .panel, .tips, #quizHud, #endlessHud, #liveHud, #dailyHud, .seg, .chip, .stat, .answerbar, .meaning, .iconbtn, .skinmenu) {
+      border: 2.5px solid var(--ink);
+      box-shadow: 4px 4px 0 var(--ink)
+    }
+
+    [data-skin="bold"] .card {
+      border-top: 12px solid var(--tc, var(--ink))
+    }
+
+    [data-skin="bold"] .btn:not(.ghost) {
+      border: 2.5px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      transition: transform .08s, box-shadow .08s
+    }
+
+    [data-skin="bold"] .btn:not(.ghost):active:not(:disabled),
+    [data-skin="bold"] .chip:active {
+      transform: translate(3px, 3px);
+      box-shadow: none
+    }
+
+    [data-skin="bold"] .seg button[aria-pressed="true"] {
+      background: var(--accent);
+      color: var(--accent-ink);
+      box-shadow: inset 0 0 0 2.5px var(--ink)
+    }
+
+    [data-skin="bold"] .chip[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--surface)
+    }
+
+    [data-skin="bold"] .board {
+      border: 2.5px solid var(--ink)
+    }
+
+    [data-skin="bold"] .board::before {
+      background-image: radial-gradient(var(--grid) 2px, transparent 2.5px);
+      -webkit-mask-image: none;
+      mask-image: none
+    }
+
+    [data-skin="bold"] .hint {
+      border: 2px solid var(--ink)
+    }
+
+    [data-skin="bold"] .stamp {
+      border: 2.5px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink)
+    }
+
+    /* --- Minimal: white space, one sans-serif, a single blue --- */
+    :root[data-skin="minimal"] {
+      --bg: #FFFFFF;
+      --surface: #FFFFFF;
+      --ink: #111827;
+      --muted: #6B7280;
+      --line: #E5E7EB;
+      --grid: #F3F4F6;
+      --accent: #2563EB;
+      --accent-ink: #FFFFFF;
+      --ok: #15803D;
+      --bad: #DC2626;
+      --t1: #16A34A;
+      --t2: #D97706;
+      --t3: #DC2626;
+      --t4: #7C3AED;
+      --blue: #2563EB;
+      --f-display: "Inter", system-ui, sans-serif;
+      --f-tile: "Inter", system-ui, sans-serif;
+      --f-body: "Inter", system-ui, sans-serif;
+      --tile-w: 800;
+      color-scheme: light
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root[data-skin="minimal"] {
+        --bg: #0B0C0E;
+        --surface: #0B0C0E;
+        --ink: #F3F4F6;
+        --muted: #9CA3AF;
+        --line: #26292F;
+        --grid: #16181C;
+        --accent: #60A5FA;
+        --accent-ink: #0B0C0E;
+        --ok: #4ADE80;
+        --bad: #F87171;
+        --t1: #4ADE80;
+        --t2: #FBBF24;
+        --t3: #F87171;
+        --t4: #A78BFA;
+        --blue: #60A5FA;
+        color-scheme: dark
+      }
+    }
+
+    [data-skin="minimal"] header.top {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: var(--bg)
+    }
+
+    [data-skin="minimal"] .logo {
+      letter-spacing: -.035em
+    }
+
+    [data-skin="minimal"] .logo span {
+      background: none;
+      color: var(--accent);
+      padding: 0
+    }
+
+    [data-skin="minimal"] .seg {
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      padding: 0
+    }
+
+    [data-skin="minimal"] .seg button {
+      border-radius: 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px
+    }
+
+    [data-skin="minimal"] .seg button[aria-pressed="true"] {
+      background: transparent;
+      color: var(--ink);
+      border-bottom-color: var(--ink)
+    }
+
+    [data-skin="minimal"] :is(.card, .panel, .tips, #quizHud, #endlessHud, #liveHud, #dailyHud) {
+      box-shadow: none;
+      border-radius: 12px
+    }
+
+    [data-skin="minimal"] .card {
+      border-top: 1px solid var(--line)
+    }
+
+    [data-skin="minimal"] .board {
+      background: var(--surface);
+      border: 1px solid var(--line)
+    }
+
+    [data-skin="minimal"] .board::before {
+      display: none
+    }
+
+    [data-skin="minimal"] .w {
+      letter-spacing: .01em
+    }
+
+    /* --- Night arcade: neon on black, pixel headings, scanlines --- */
+    :root[data-skin="arcade"] {
+      --bg: #090A1A;
+      --surface: #11132B;
+      --ink: #E9E9FF;
+      --muted: #8C8FC4;
+      --line: #2A2D5C;
+      --grid: #1A1D44;
+      --accent: #FF2E88;
+      --accent-ink: #090A1A;
+      --ok: #3DFF9A;
+      --bad: #FF4D6D;
+      --t1: #3DFF9A;
+      --t2: #FFD23F;
+      --t3: #FF4D6D;
+      --t4: #00E5FF;
+      --blue: #00E5FF;
+      --f-display: "Press Start 2P", ui-monospace, monospace;
+      --f-tile: "Chakra Petch", system-ui, sans-serif;
+      --f-body: "Chakra Petch", system-ui, sans-serif;
+      --tile-w: 700;
+      color-scheme: dark
+    }
+
+    [data-skin="arcade"] .logo {
+      font-size: 1.05rem;
+      letter-spacing: 0;
+      line-height: 1.5
+    }
+
+    [data-skin="arcade"] .logo span {
+      background: none;
+      color: var(--accent);
+      text-shadow: 0 0 8px var(--accent), 0 0 18px var(--accent)
+    }
+
+    [data-skin="arcade"] :is(.panel h2, .big) {
+      line-height: 1.5
+    }
+
+    [data-skin="arcade"] .panel h2 {
+      font-size: 1rem
+    }
+
+    [data-skin="arcade"] .big {
+      font-size: 2rem
+    }
+
+    [data-skin="arcade"] :is(.lvl, .reveal, .winner, .tiers b, .sub h3) {
+      font-size: .78rem;
+      line-height: 1.6
+    }
+
+    [data-skin="arcade"] .stamp {
+      font-size: .72rem;
+      padding: 8px 14px;
+      box-shadow: 0 0 16px var(--ok)
+    }
+
+    [data-skin="arcade"] .stamp.neutral {
+      box-shadow: none
+    }
+
+    [data-skin="arcade"] .card {
+      box-shadow: 0 0 0 1px var(--line), 0 0 30px -8px var(--accent)
+    }
+
+    [data-skin="arcade"] .board:not(.solved):not(.revealed) {
+      box-shadow: inset 0 0 40px color-mix(in srgb, var(--t4) 14%, transparent)
+    }
+
+    [data-skin="arcade"] .board {
+      background: #05060F
+    }
+
+    [data-skin="arcade"] .board::before {
+      background-image: repeating-linear-gradient(0deg, color-mix(in srgb, var(--ink) 7%, transparent) 0 1px, transparent 1px 4px);
+      background-size: auto;
+      -webkit-mask-image: none;
+      mask-image: none
+    }
+
+    [data-skin="arcade"] .pz {
+      text-shadow: 0 0 10px color-mix(in srgb, var(--t4) 55%, transparent)
+    }
+
+    [data-skin="arcade"] .seg button[aria-pressed="true"] {
+      background: var(--accent);
+      color: var(--accent-ink);
+      box-shadow: 0 0 14px var(--accent)
+    }
+
+    [data-skin="arcade"] .btn.go {
+      box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent)
+    }
   </style>
 
   <div class="wrap">
@@ -2120,7 +2635,13 @@
       <div class="brandrow">
         <h1 class="logo">Rebus <span>Club</span></h1>
         <span class="tagline">Words, pictures and positions hide a phrase.</span>
-        <button class="btn go sm" id="installBtn" type="button" hidden style="margin-left:auto">Install app</button>
+        <div class="brandtools">
+          <button class="btn go sm" id="installBtn" type="button" hidden>Install app</button>
+          <div class="skinpick" id="skinPick">
+            <button class="iconbtn" id="skinBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="skinMenu" title="Theme" aria-label="Choose a theme"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-.5-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.5 17 3 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="7.5" cy="11" r="1.4" fill="currentColor"/><circle cx="10.5" cy="7.2" r="1.4" fill="currentColor"/><circle cx="15" cy="7.6" r="1.4" fill="currentColor"/></svg></button>
+            <fieldset class="skinmenu" id="skinMenu" hidden><legend>Theme</legend></fieldset>
+          </div>
+        </div>
       </div>
       <div class="seg" role="group" aria-label="Mode">
         <button id="mPractice" aria-pressed="true">Practice</button>
@@ -3485,6 +4006,44 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
       setMode(m);
     });
     MODES.forEach(m => { $('m' + m[0].toUpperCase() + m.slice(1)).onclick = () => go(m) });
+
+    /* ================= themes ================= */
+    /* The palette button in the header opens a list of looks. The choice is saved on the device and
+       applied before the page draws (see the script in <head>), where each theme's fonts are loaded too. */
+    const SKINS = [ // swatch: background, text, accent
+      { id: 'original', name: 'Original', note: 'Graph paper', sw: ['#E6EDEA', '#12302B', '#F2B632'] },
+      { id: 'newspaper', name: 'Newspaper', note: 'The weekend puzzle page', sw: ['#F3EEE3', '#1B1A17', '#B3261E'] },
+      { id: 'bold', name: 'Bold', note: 'Colour blocks and outlines', sw: ['#FFE9A8', '#141414', '#FF5A5F'] },
+      { id: 'minimal', name: 'Minimal', note: 'Quiet and clean', sw: ['#FFFFFF', '#111827', '#2563EB'] },
+      { id: 'arcade', name: 'Night arcade', note: 'Neon on black', sw: ['#090A1A', '#FF2E88', '#00E5FF'] },
+    ];
+    const skinNow = () => document.documentElement.dataset.skin || 'original';
+    function setSkin(id) {
+      if (!SKINS.some(s => s.id === id)) id = 'original';
+      if (id === 'original') delete document.documentElement.dataset.skin;
+      else { loadSkinFonts(id); document.documentElement.dataset.skin = id }
+      store('rb_skin', id);
+      syncThemeColor();
+    }
+    // the browser bar colour follows the theme's background
+    function syncThemeColor() {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      if (bg) document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = bg);
+    }
+    try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeColor) } catch (e) { }
+    $('skinMenu').insertAdjacentHTML('beforeend', SKINS.map(s =>
+      `<label class="skinopt"><input type="radio" name="skin" value="${s.id}"${s.id === skinNow() ? ' checked' : ''}><span class="sw" style="--a:${s.sw[0]};--b:${s.sw[1]};--c:${s.sw[2]}" aria-hidden="true"></span><span>${s.name}<small>${s.note}</small></span></label>`).join(''));
+    $('skinMenu').addEventListener('change', e => { if (e.target.name === 'skin') setSkin(e.target.value) });
+    function skinMenu(open) {
+      $('skinMenu').hidden = !open; $('skinBtn').setAttribute('aria-expanded', open);
+      if (open) ($('skinMenu').querySelector('input:checked') || $('skinMenu').querySelector('input')).focus();
+    }
+    $('skinBtn').onclick = () => skinMenu($('skinMenu').hidden);
+    document.addEventListener('click', e => { if (!$('skinMenu').hidden && !$('skinPick').contains(e.target)) skinMenu(false) });
+    $('skinPick').addEventListener('keydown', e => { // Esc closes the menu (and mustn't reach the Skip shortcut)
+      if (e.key === 'Escape' && !$('skinMenu').hidden) { e.stopPropagation(); skinMenu(false); $('skinBtn').focus() }
+    });
+    syncThemeColor();
 
     /* ================= keyboard ================= */
     /* Enter checks, then moves on once the puzzle is done. ? anywhere (answers never contain one),
