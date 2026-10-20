@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Rebus Club</title>
   <meta name="description" content="Rebus riddles: practice, a 15-round quiz, and an endless climb. Works offline.">
-  <meta name="theme-color" content="#E6EDEA" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0D1A18" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F3EAE0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1C1512" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -56,23 +56,23 @@
 
 <body>
   <style>
-    /* Layout: one centred column. The puzzle board (graph-paper slate) is the hero; answer + actions stack under it. */
+    /* Layout: one centred column. The puzzle board (graph-paper slate) is the hero. Original colours: warm sand and espresso ink with a teal accent; dark mode is deep cocoa; answer + actions stack under it. */
     :root {
-      --bg: #E6EDEA;
-      --surface: #F8FBF9;
-      --ink: #12302B;
-      --muted: #58716B;
-      --line: #C6D5CF;
-      --grid: #D7E3DE;
-      --accent: #F2B632;
-      --accent-ink: #2E2200;
-      --ok: #1E8556;
-      --bad: #C2433A;
-      --t1: #2E9E6B;
-      --t2: #D98E12;
-      --t3: #C2433A;
-      --t4: #6E4BC8;
-      --blue: #2463C9;
+      --bg: #F3EAE0;
+      --surface: #FCF8F3;
+      --ink: #3A2418;
+      --muted: #7A6052;
+      --line: #DDCBBA;
+      --grid: #E9DCCD;
+      --accent: #147A72;
+      --accent-ink: #FFFFFF;
+      --ok: #2B7A52;
+      --bad: #B8432F;
+      --t1: #2B7A52;
+      --t2: #9C5C0C;
+      --t3: #B8432F;
+      --t4: #6646A3;
+      --blue: #2A5DAE;
       --f-display: "Bricolage Grotesque", system-ui, sans-serif;
       --f-tile: "Archivo Black", "Arial Black", Impact, sans-serif;
       --f-body: "Figtree", system-ui, -apple-system, sans-serif;
@@ -80,41 +80,41 @@
 
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
-        --bg: #0D1A18;
-        --surface: #152724;
-        --ink: #E4EFEA;
-        --muted: #93AAA3;
-        --line: #2A4440;
-        --grid: #1D3330;
-        --accent: #F2B632;
-        --accent-ink: #2E2200;
-        --ok: #4CC28A;
-        --bad: #EE746A;
-        --t1: #4CC28A;
-        --t2: #F0AE3C;
-        --t3: #EE746A;
-        --t4: #A98BF0;
-        --blue: #6EA4F5;
+        --bg: #1C1512;
+        --surface: #271D19;
+        --ink: #F4EAE2;
+        --muted: #B59E90;
+        --line: #3E2F28;
+        --grid: #2C221D;
+        --accent: #3CC2B8;
+        --accent-ink: #0F2422;
+        --ok: #5CC98A;
+        --bad: #F08066;
+        --t1: #5CC98A;
+        --t2: #F0A94B;
+        --t3: #F08066;
+        --t4: #B49AF0;
+        --blue: #7FA8F0;
         color-scheme: dark
       }
     }
 
     :root[data-theme="dark"] {
-      --bg: #0D1A18;
-      --surface: #152724;
-      --ink: #E4EFEA;
-      --muted: #93AAA3;
-      --line: #2A4440;
-      --grid: #1D3330;
-      --accent: #F2B632;
-      --accent-ink: #2E2200;
-      --ok: #4CC28A;
-      --bad: #EE746A;
-      --t1: #4CC28A;
-      --t2: #F0AE3C;
-      --t3: #EE746A;
-      --t4: #A98BF0;
-      --blue: #6EA4F5;
+      --bg: #1C1512;
+      --surface: #271D19;
+      --ink: #F4EAE2;
+      --muted: #B59E90;
+      --line: #3E2F28;
+      --grid: #2C221D;
+      --accent: #3CC2B8;
+      --accent-ink: #0F2422;
+      --ok: #5CC98A;
+      --bad: #F08066;
+      --t1: #5CC98A;
+      --t2: #F0A94B;
+      --t3: #F08066;
+      --t4: #B49AF0;
+      --blue: #7FA8F0;
       color-scheme: dark
     }
 
@@ -4011,7 +4011,7 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
     /* The palette button in the header opens a list of looks. The choice is saved on the device and
        applied before the page draws (see the script in <head>), where each theme's fonts are loaded too. */
     const SKINS = [ // swatch: background, text, accent
-      { id: 'original', name: 'Original', note: 'Graph paper', sw: ['#E6EDEA', '#12302B', '#F2B632'] },
+      { id: 'original', name: 'Original', note: 'Sand and teal', sw: ['#F3EAE0', '#3A2418', '#147A72'] },
       { id: 'newspaper', name: 'Newspaper', note: 'The weekend puzzle page', sw: ['#F3EEE3', '#1B1A17', '#B3261E'] },
       { id: 'bold', name: 'Bold', note: 'Colour blocks and outlines', sw: ['#FFE9A8', '#141414', '#FF5A5F'] },
       { id: 'minimal', name: 'Minimal', note: 'Quiet and clean', sw: ['#FFFFFF', '#111827', '#2563EB'] },
