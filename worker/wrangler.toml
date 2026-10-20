@@ -12,7 +12,7 @@ compatibility_date = "2025-09-01"
 
 [vars]
 # Sites allowed to send results (comma-separated, no trailing slash).
-ALLOWED_ORIGINS = "https://rebus.siagames.co.uk,http://localhost:8000"
+ALLOWED_ORIGINS = "https://puzzle.siagames.co.uk,https://rebus-club.vercel.app,http://localhost:8000"
 
 [[d1_databases]]
 binding = "DB"
