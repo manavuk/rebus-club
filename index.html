@@ -2614,6 +2614,7 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
       addHint(); trail.push('h');
       if (scored()) refreshMeta();
       if (mode === 'daily') dailySave();
+      practiceSave();
     };
     $('form').onsubmit = e => {
       e.preventDefault();
@@ -2628,13 +2629,14 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
       feedback(r === 'close' ? 'Very close. Check the wording.' + extra : 'Not quite. Look again.' + extra, 'bad');
       if (scored()) refreshMeta();
       if (mode === 'daily') dailySave();
+      practiceSave();
     };
     $('revealBtn').onclick = () => {
       if (settled || !cur) return;
       settled = true; lockCard();
       showStamp(cur.a[0].replace(/(^|\s)\S/g, m => m.toUpperCase()), false);
       recordResult(cur, 0);
-      if (mode === 'practice') { PR.streak = 0; practiceStats(); }
+      if (mode === 'practice') { PR.streak = 0; practiceStats(); practiceClear(); }
       else if (mode === 'quiz') quizGiveUp(); else if (mode === 'daily') dailyGiveUp(); else endlessGiveUp();
     };
     /* Once a puzzle is over (solved or given up), what the answer means, folded away until opened. */
@@ -2652,7 +2654,7 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
       const first = markSolved(cur);
       recordResult(cur, 1);
       if (mode === 'practice') {
-        PR.solved++; PR.streak++; PR.best = Math.max(PR.best, PR.streak);
+        PR.solved++; PR.streak++; PR.best = Math.max(PR.best, PR.streak); practiceClear();
         store('rb_pbest', PR.best); practiceStats(); renderChips();
         feedback(PR.streak > 1 ? `Correct. ${PR.streak} in a row.` : 'Correct.', 'ok');
         const t = tierOf(cur.d);
@@ -2689,10 +2691,21 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
     }
     /* Moving on from an unsolved puzzle (Skip, or switching difficulty) ends the streak, same as Reveal. */
     function practiceAbandon() {
+      practiceClear();
       if (!cur || settled) return;
       recordResult(cur, -1);
       if (PR.streak) { PR.streak = 0; practiceStats(); toast('Streak reset') }
     }
+    // a fresh deck for a tier: unsolved first, then ones solved before; within each, ones not in the last deck first
+    function dealDeck(t, pool) {
+      const old = PR.decks[t];
+      const seen = new Set(old ? old.map(p => p.id) : []);
+      const rank = p => (SOLVED.has(p.id) ? 2 : 0) + (seen.has(p.id) ? 1 : 0);
+      PR.decks[t] = [0, 1, 2, 3].flatMap(r => shuffle(pool.filter(p => rank(p) === r)));
+      PR.idx[t] = 0;
+      return PR.decks[t];
+    }
+    const practiceMeta = (p, t) => `${PR.idx[t]} of ${PR.decks[t].length}${SOLVED.has(p.id) ? ' · solved before' : ''}`;
     function practiceNext() {
       const t = PR.t;
       const pool = ALL().filter(p => inTier(p, t));
@@ -2704,16 +2717,45 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
         return;
       }
       let deck = PR.decks[t];
-      if (!deck || PR.idx[t] >= deck.length) {
-        // unsolved first, then ones solved before; within each, ones not in the last deck first
-        const seen = new Set(deck ? deck.map(p => p.id) : []);
-        const rank = p => (SOLVED.has(p.id) ? 2 : 0) + (seen.has(p.id) ? 1 : 0);
-        PR.decks[t] = deck = [0, 1, 2, 3].flatMap(r => shuffle(pool.filter(p => rank(p) === r)));
-        PR.idx[t] = 0;
-      }
+      if (!deck || PR.idx[t] >= deck.length) deck = dealDeck(t, pool);
       const p = deck[PR.idx[t]++];
-      showPuzzle(p, `${PR.idx[t]} of ${deck.length}${SOLVED.has(p.id) ? ' · solved before' : ''}`);
+      showPuzzle(p, practiceMeta(p, t));
+      practiceSave();
     }
+
+    /* The unsolved puzzle on screen in Practice is saved as you play, with its hints, wrong guesses,
+       time so far and half-typed answer, so a reload, or a trip to another mode, brings it back.
+       Skip, changing difficulty, Reveal and solving it all clear it. */
+    const PRACTICE_KEY = 'rb_practice';
+    function practiceSave() {
+      if (mode !== 'practice' || !cur || settled) return;
+      const ms = clock.ms + (clock.since != null ? performance.now() - clock.since : 0);
+      store(PRACTICE_KEY, JSON.stringify({ id: cur.id, h: hintsUsed, w: wrongs, tr: trail.join(''), ms: Math.round(ms), g: $('guess').value.slice(0, 80) }));
+    }
+    function practiceClear() { try { localStorage.removeItem(PRACTICE_KEY) } catch (e) { } }
+    function practiceResume() { // true if a saved puzzle was put back on screen
+      let s = null; try { s = JSON.parse(store(PRACTICE_KEY) || 'null') } catch (e) { }
+      const p = s && typeof s.id === 'string' && ALL().find(x => x.id === s.id);
+      if (!p) { practiceClear(); return false }
+      const t = PR.t = tierOf(p.d), fresh = !PR.decks[t]; // no deck yet: the page has just loaded
+      let deck = PR.decks[t];
+      if (!deck || !deck[PR.idx[t] - 1] || deck[PR.idx[t] - 1].id !== p.id) { // put it at the top of a new deck
+        deck = dealDeck(t, ALL().filter(x => inTier(x, t)));
+        deck.splice(deck.findIndex(x => x.id === p.id), 1); deck.unshift(p); PR.idx[t] = 1;
+      }
+      renderChips();
+      showPuzzle(p, practiceMeta(p, t));
+      for (let i = 0; i < Math.min(+s.h || 0, 2); i++) addHint();
+      wrongs = Math.max(0, +s.w || 0);
+      trail = [...String(s.tr || '')].filter(c => c === 'h' || c === 'x');
+      clock.ms = Math.max(0, +s.ms || 0);
+      $('guess').value = String(s.g || '').slice(0, 80);
+      if (fresh && (hintsUsed || wrongs)) feedback(`Picked up where you left off${wrongs ? `: ${wrongs} wrong guess${wrongs > 1 ? 'es' : ''} so far` : ''}.`, 'info');
+      return true;
+    }
+    $('guess').addEventListener('input', practiceSave);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) practiceSave() });
+    addEventListener('pagehide', practiceSave);
     async function practiceGen() {
       const t = PR.t;
       const level = t < 4 ? t : Math.max(4, ...LIB.filter(p => p.d >= 4).map(p => p.d + 1));
@@ -3409,11 +3451,11 @@ Reply with only a JSON array of ${items.length} strings, one answer per puzzle, 
     function show(on) { SECTIONS.forEach(id => $(id).hidden = !on[id]) }
     function setMode(m) {
       if (mode === 'live' && m !== 'live') liveLeave(true);
-      if (mode === 'practice') practiceAbandon();
+      if (mode === 'practice') practiceSave(); // kept for when you come back, not skipped
       mode = m;
       ['Practice', 'Daily', 'Quiz', 'Endless', 'Live'].forEach(n => $('m' + n).setAttribute('aria-pressed', m === n.toLowerCase()));
       Q.playing = false; E.playing = false;
-      if (m === 'practice') { show({ practiceBar: 1, card: 1 }); renderChips(); practiceNext() }
+      if (m === 'practice') { show({ practiceBar: 1, card: 1 }); renderChips(); if (!practiceResume()) practiceNext() }
       else if (m === 'daily') { show({ dailyHud: 1, card: 1 }); dailyStart() }
       else if (m === 'quiz') { show({ quizIntro: 1 }); $('qBestIntro').textContent = store('rb_qbest') || '—' }
       else if (m === 'live') { liveLobby() }
