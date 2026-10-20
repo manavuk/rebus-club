@@ -1,0 +1,3 @@
+# wrangler's local dev state (local database, cache)
+.wrangler/
+node_modules/

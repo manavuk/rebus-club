@@ -1,0 +1,20 @@
+# Rebus Club results API. Deploy steps:
+#   cd worker
+#   npx wrangler login
+#   npx wrangler d1 create rebus-club            # paste the database_id it prints below
+#   npx wrangler d1 execute rebus-club --remote --file=schema.sql
+#   npx wrangler secret put SALT                 # any long random string
+#   npx wrangler deploy                          # prints the Worker's address
+# Then put that address in RESULTS_API in index.html.
+name = "rebus-club-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Sites allowed to send results (comma-separated, no trailing slash).
+ALLOWED_ORIGINS = "https://rebus.siagames.co.uk,http://localhost:8000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rebus-club"
+database_id = "7a8c1214-9b15-4db6-9ad4-fcda63a5aea8"
