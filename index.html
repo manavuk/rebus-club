@@ -1017,7 +1017,7 @@ function dailyShareText(){
   const icons={h:'💡',x:'🟥',o:'🟩',r:'⬛'};
   const hints=[...e.t].filter(c=>c==='h').length, st=dailyStreak();
   const how=e.ok?(hints?`Solved with ${hints} hint${hints>1?'s':''}`:'Solved, no hints'):'Stumped';
-  const url=STANDALONE&&/^https?:$/.test(location.protocol)?location.origin+location.pathname:'';
+  const url=STANDALONE&&/^https?:$/.test(location.protocol)?location.origin+location.pathname+'#daily':'';
   return [`Rebus Club Daily #${dayNum(D.key)} · ${tierName(D.p.d)}`,[...e.t].map(c=>icons[c]||'').join(''),how+(st>1?` · 🔥 ${st}`:''),url].filter(Boolean).join('\n');
 }
 async function dailyShare(){
@@ -1545,7 +1545,7 @@ const SECTIONS=['practiceBar','dailyHud','quizIntro','endlessIntro','quizHud','e
 function show(on){SECTIONS.forEach(id=>$(id).hidden=!on[id])}
 function setMode(m){
   if(mode==='live'&&m!=='live') liveLeave(true);
-  if(mode==='practice'&&m!=='practice') practiceAbandon();
+  if(mode==='practice') practiceAbandon();
   mode=m;
   ['Practice','Daily','Quiz','Endless','Live'].forEach(n=>$('m'+n).setAttribute('aria-pressed',m===n.toLowerCase()));
   Q.playing=false;E.playing=false;
@@ -1556,7 +1556,32 @@ function setMode(m){
   else{show({endlessIntro:1});const b=JSON.parse(store('rb_ebest')||'null');$('eBestIntro').textContent=b?`${b.score} (level ${b.level})`:'—'}
   refreshGenUI();
 }
-$('mPractice').onclick=()=>setMode('practice');$('mDaily').onclick=()=>setMode('daily');$('mQuiz').onclick=()=>setMode('quiz');$('mEndless').onclick=()=>setMode('endless');$('mLive').onclick=()=>setMode('live');
+
+/* ================= history ================= */
+/* Each mode has its own address (#daily, #quiz…), so the browser's back and forward buttons
+   (and the phone back gesture) move between modes, and a mode can be linked to directly.
+   Leaving a game in progress asks first, since a stray back swipe would otherwise lose it. */
+const MODES=['practice','daily','quiz','endless','live'];
+function modeFromURL(){
+  let m='';try{m=decodeURIComponent(location.hash.slice(1)).toLowerCase()}catch(e){}
+  return MODES.includes(m)&&!(m==='live'&&STANDALONE)?m:'practice';
+}
+const inGame=()=>(mode==='quiz'&&Q.playing)||(mode==='endless'&&E.playing)||(mode==='live'&&!!L.room);
+const okToLeave=()=>!inGame()||confirm('Leave this game? Your progress will be lost.');
+function setURL(m){ // history can be unavailable in sandboxed previews; the game works without it
+  try{history.pushState({mode:m},'',location.pathname+location.search+'#'+m)}catch(e){}
+}
+function go(m){ // a mode tab was pressed
+  if(!okToLeave()) return;
+  if(m!==mode) setURL(m);
+  setMode(m);
+}
+addEventListener('popstate',()=>{
+  const m=modeFromURL(); if(m===mode) return;
+  if(!okToLeave()){setURL(mode);return} // stay put: put the current mode back on top
+  setMode(m);
+});
+MODES.forEach(m=>{$('m'+m[0].toUpperCase()+m.slice(1)).onclick=()=>go(m)});
 
 /* ================= keyboard ================= */
 /* Enter checks, then moves on once the puzzle is done. ? anywhere (answers never contain one),
@@ -1575,7 +1600,7 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-practiceStats();markDailyTab();setMode('practice');
+practiceStats();markDailyTab();setMode(modeFromURL());
 </script>
 </body>
 </html>
